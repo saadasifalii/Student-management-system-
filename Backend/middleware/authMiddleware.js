@@ -3,8 +3,9 @@ const jwt = require("jsonwebtoken");
 // Checks that a valid token was sent with the request.
 // If valid, attaches the decoded user info to req.user so later code can use it.
 exports.verifyToken = (req, res, next) => {
-    const authHeader = req.headers["authorization"];
+    console.log("VERIFY TOKEN RUNNING FOR:", req.method, req.originalUrl);
 
+    const authHeader = req.headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({ error: "No token provided" });
     }

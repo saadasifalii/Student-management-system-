@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const studentController = require("../controllers/studentController");
-const { verifyToken } = require("../middleware/authMiddleware");
+const { requireRole } = require("../middleware/roleMiddleware");
 
 router.get("/", studentController.getAllStudents);
 router.get("/:id", studentController.getStudentById);
-router.post("/", studentController.createStudent);
-router.put("/:id", studentController.updateStudent);
-router.delete("/:id", verifyToken,studentController.deleteStudent);
+router.post("/", requireRole("admin"), studentController.createStudent);
+router.put("/:id", requireRole("admin"), studentController.updateStudent);
+router.delete("/:id", requireRole("admin"), studentController.deleteStudent);
 
-module.exports = router; 
+module.exports = router;

@@ -38,7 +38,10 @@ app.get("/", (req, res) => {
 });
 app.use("/api/auth", authRoutes);
 
+console.log("AUTH ROUTE LOADED");
+
 app.use(verifyToken);
+
 app.use("/api/users", userRoutes);
 
 app.use("/api/students", studentRoutes);

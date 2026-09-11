@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const degreeProgramController = require("../controllers/degreeProgramController");
+const { requireRole } = require("../middleware/roleMiddleware");
 
 router.get("/", degreeProgramController.getAllDegreePrograms);
 router.get("/:id", degreeProgramController.getDegreeProgramById);
-router.post("/", degreeProgramController.createDegreeProgram);
-router.put("/:id", degreeProgramController.updateDegreeProgram);
-router.delete("/:id", degreeProgramController.deleteDegreeProgram);
+router.post("/", requireRole("admin"), degreeProgramController.createDegreeProgram);
+router.put("/:id", requireRole("admin"), degreeProgramController.updateDegreeProgram);
+router.delete("/:id", requireRole("admin"), degreeProgramController.deleteDegreeProgram);
 
 module.exports = router;

@@ -1,12 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const attendanceController = require("../controllers/attendanceController");
+const { requireRole } = require("../middleware/roleMiddleware");
+const { verifyTeacherOwnsOfferingFromBody, verifyTeacherOwnsOfferingFromRecord } = require("../middleware/ownershipMiddleware");
 
 router.get("/", attendanceController.getAllAttendance);
 router.get("/:id", attendanceController.getAttendanceById);
 router.get("/student/:studentId", attendanceController.getAttendanceByStudent);
-router.post("/", attendanceController.createAttendance);
-router.put("/:id", attendanceController.updateAttendance);
-router.delete("/:id", attendanceController.deleteAttendance);
+router.post("/", requireRole("teacher", "admin"), verifyTeacherOwnsOfferingFromBody, attendanceController.createAttendance);
+router.put("/:id", requireRole("teacher", "admin"), verifyTeacherOwnsOfferingFromRecord("attendance"), attendanceController.updateAttendance);
+router.delete("/:id", requireRole("admin"), attendanceController.deleteAttendance);
 
 module.exports = router;
