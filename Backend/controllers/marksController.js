@@ -23,6 +23,19 @@ exports.getQuizMarkById = async (req, res) => {
     }
 };
 
+exports.getQuizMarksByStudent = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT * FROM quiz_marks WHERE student_id = ?",
+            [req.params.studentId]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error", details: err.message });
+    }
+};
+
 exports.createQuizMark = async (req, res) => {
     try {
         const { student_id, course_offering_id, quiz_number, total_marks, marks_obtained, quiz_date } = req.body;
@@ -91,6 +104,19 @@ exports.getAssignmentMarkById = async (req, res) => {
         const [rows] = await db.query("SELECT * FROM assignment_marks WHERE id = ?", [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: "Assignment mark not found" });
         res.json(rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error", details: err.message });
+    }
+};
+
+exports.getAssignmentMarksByStudent = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT * FROM assignment_marks WHERE student_id = ?",
+            [req.params.studentId]
+        );
+        res.json(rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error", details: err.message });
@@ -166,6 +192,19 @@ exports.getExamMarkById = async (req, res) => {
         const [rows] = await db.query("SELECT * FROM exam_marks WHERE id = ?", [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: "Exam mark not found" });
         res.json(rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error", details: err.message });
+    }
+};
+
+exports.getExamMarksByStudent = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT * FROM exam_marks WHERE student_id = ?",
+            [req.params.studentId]
+        );
+        res.json(rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error", details: err.message });

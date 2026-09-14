@@ -3,7 +3,6 @@ const db = require("../db");
 // For CREATE (POST) requests — course_offering_id comes from req.body
 exports.verifyTeacherOwnsOfferingFromBody = async (req, res, next) => {
     try {
-        // Admins bypass ownership checks entirely
         if (req.user.role === "admin") return next();
 
         if (req.user.role !== "teacher") {
@@ -15,7 +14,6 @@ exports.verifyTeacherOwnsOfferingFromBody = async (req, res, next) => {
             return res.status(400).json({ error: "course_offering_id is required" });
         }
 
-        // Find this logged-in user's teacher record
         const [teacherRows] = await db.query(
             "SELECT id FROM teachers WHERE user_id = ?",
             [req.user.id]
@@ -25,7 +23,6 @@ exports.verifyTeacherOwnsOfferingFromBody = async (req, res, next) => {
         }
         const teacherId = teacherRows[0].id;
 
-        // Confirm this teacher actually teaches this course offering
         const [offeringRows] = await db.query(
             "SELECT teacher_id FROM course_offerings WHERE id = ?",
             [course_offering_id]
@@ -44,7 +41,7 @@ exports.verifyTeacherOwnsOfferingFromBody = async (req, res, next) => {
     }
 };
 
-// For UPDATE/DELETE requests — need to look up the record first to find its course_offering_id
+// For UPDATE/DELETE requests — looks up the existing record first to find its course_offering_id
 // tableName must be one of: "attendance", "quiz_marks", "assignment_marks", "exam_marks"
 exports.verifyTeacherOwnsOfferingFromRecord = (tableName) => {
     return async (req, res, next) => {
@@ -83,4 +80,37 @@ exports.verifyTeacherOwnsOfferingFromRecord = (tableName) => {
             res.status(500).json({ error: "Database error", details: err.message });
         }
     };
+};
+
+// Allows: admin (any), teacher (any), OR a student viewing their OWN records only
+exports.verifyStudentOwnsDataOrStaff = async (req, res, next) => {
+    try {
+        if (req.user.role === "admin" || req.user.role === "teacher") {
+            return next();
+        }
+
+        if (req.user.role !== "student") {
+            return res.status(403).json({ error: "You do not have permission to view this data" });
+        }
+
+        const [studentRows] = await db.query(
+            "SELECT id FROM students WHERE user_id = ?",
+            [req.user.id]
+        );
+        if (studentRows.length === 0) {
+            return res.status(403).json({ error: "No student record linked to this account" });
+        }
+
+        const ownStudentId = studentRows[0].id;
+        const requestedStudentId = parseInt(req.params.studentId, 10);
+
+        if (ownStudentId !== requestedStudentId) {
+            return res.status(403).json({ error: "You can only view your own records" });
+        }
+
+        next();
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error", details: err.message });
+    }
 };
