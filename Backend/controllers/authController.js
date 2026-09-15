@@ -51,8 +51,9 @@ exports.login = async (req, res) => {
                 role: user.role
             }
         });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
-    }
-};
+    }  catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({
+        error: "Unable to login right now. Please try again later."
+})};
+}
