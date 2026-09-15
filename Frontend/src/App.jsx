@@ -10,6 +10,11 @@ import Semesters from './pages/Semesters';
 import DegreePrograms from './pages/DegreePrograms';
 import Courses from './pages/Courses';
 import Sections from './pages/Sections';
+import CourseOfferings from './pages/CourseOfferings';
+import Enrollments from './pages/Enrollments';
+import AttendanceEntry from './pages/AttendanceEntry';
+import MarksEntry from './pages/MarksEntry';
+import MyAttendance from './pages/MyAttendance';
 
 function App() {
     return (
@@ -25,6 +30,11 @@ function App() {
                     <Route path="/degree-programs" element={<ProtectedRoute allowedRoles={['admin']}><DegreePrograms /></ProtectedRoute>} />
                     <Route path="/courses" element={<ProtectedRoute allowedRoles={['admin', 'teacher']}><Courses /></ProtectedRoute>} />
                     <Route path="/sections" element={<ProtectedRoute allowedRoles={['admin']}><Sections /></ProtectedRoute>} />
+                    <Route path="/course-offerings" element={<ProtectedRoute allowedRoles={['admin', 'teacher']}><CourseOfferings /></ProtectedRoute>} />
+                    <Route path="/enrollments" element={<ProtectedRoute allowedRoles={['admin']}><Enrollments /></ProtectedRoute>} />
+                    <Route path="/attendance" element={<ProtectedRoute allowedRoles={['admin', 'teacher']}><AttendanceEntry /></ProtectedRoute>} />
+                    <Route path="/marks" element={<ProtectedRoute allowedRoles={['admin', 'teacher']}><MarksEntry /></ProtectedRoute>} />
+                    <Route path="/my-attendance" element={<ProtectedRoute allowedRoles={['student']}><MyAttendance /></ProtectedRoute>} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
