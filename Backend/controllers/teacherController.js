@@ -3,8 +3,40 @@ const db = require("../db");
 // GET /api/teachers
 exports.getAllTeachers = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM teachers");
-        res.json(rows);
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        // Prevent invalid values
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+
+        const offset = (safePage - 1) * safeLimit;
+
+        // Get teachers for current page
+        const [rows] = await db.query(
+            "SELECT * FROM teachers ORDER BY id DESC LIMIT ? OFFSET ?",
+            [safeLimit, offset]
+        );
+
+        // Get total teachers
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) AS total FROM teachers"
+        );
+
+        const totalTeachers = countResult[0].total;
+        const totalPages = Math.ceil(totalTeachers / safeLimit);
+
+        res.json({
+            teachers: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalTeachers,
+                totalPages
+            }
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error" });
@@ -18,10 +50,13 @@ exports.getTeacherById = async (req, res) => {
             "SELECT * FROM teachers WHERE id = ?",
             [req.params.id]
         );
+
         if (rows.length === 0) {
             return res.status(404).json({ error: "Teacher not found" });
         }
+
         res.json(rows[0]);
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error" });
@@ -45,15 +80,27 @@ exports.createTeacher = async (req, res) => {
             `INSERT INTO teachers
             (user_id, department_id, employee_id, first_name, last_name, designation, phone, joining_date)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [user_id, department_id, employee_id, first_name, last_name, designation, phone, joining_date]
+            [
+                user_id, department_id, employee_id,
+                first_name, last_name, designation,
+                phone, joining_date
+            ]
         );
 
-        res.status(201).json({ id: result.insertId, message: "Teacher created successfully" });
+        res.status(201).json({
+            id: result.insertId,
+            message: "Teacher created successfully"
+        });
+
     } catch (err) {
         console.error(err);
+
         if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({ error: "Employee ID or user already linked to a teacher" });
+            return res.status(409).json({
+                error: "Employee ID or user already linked to a teacher"
+            });
         }
+
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -61,29 +108,60 @@ exports.createTeacher = async (req, res) => {
 // PUT /api/teachers/:id
 exports.updateTeacher = async (req, res) => {
     try {
-        const {
-            first_name, last_name, designation,
-            phone, joining_date, status
-        } = req.body;
+        const allowedFields = [
+            "first_name",
+            "last_name",
+            "designation",
+            "phone",
+            "joining_date",
+            "status"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        // Only update fields that are actually provided
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        // Nothing to update
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        // Add teacher ID for WHERE condition
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            `UPDATE teachers SET
-             first_name = ?, last_name = ?, designation = ?,
-             phone = ?, joining_date = ?, status = ?
+            `UPDATE teachers
+             SET ${updates.join(", ")}
              WHERE id = ?`,
-            [first_name, last_name, designation, phone, joining_date, status, req.params.id]
+            values
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Teacher not found" });
+            return res.status(404).json({
+                error: "Teacher not found"
+            });
         }
-        res.json({ message: "Teacher updated successfully" });
+
+        res.json({
+            message: "Teacher updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error" });
+        res.status(500).json({
+            error: "Database error"
+        });
     }
 };
-
 // DELETE /api/teachers/:id
 exports.deleteTeacher = async (req, res) => {
     try {
@@ -91,17 +169,22 @@ exports.deleteTeacher = async (req, res) => {
             "DELETE FROM teachers WHERE id = ?",
             [req.params.id]
         );
+
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "Teacher not found" });
         }
+
         res.json({ message: "Teacher deleted successfully" });
+
     } catch (err) {
         console.error(err);
-        // A teacher can't be deleted if they still have course_offerings pointing at them
-        // (ON DELETE RESTRICT in your schema)
+
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
-            return res.status(409).json({ error: "Cannot delete teacher — still assigned to course offerings" });
+            return res.status(409).json({
+                error: "Cannot delete teacher — still assigned to course offerings"
+            });
         }
+
         res.status(500).json({ error: "Database error" });
     }
 };

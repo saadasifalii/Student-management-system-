@@ -3,11 +3,48 @@ const db = require("../db");
 // GET /api/attendance
 exports.getAllAttendance = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM attendance");
-        res.json(rows);
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        // Prevent invalid values
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+
+        const offset = (safePage - 1) * safeLimit;
+
+        // Get attendance records for current page
+        const [rows] = await db.query(
+            `SELECT * FROM attendance
+             ORDER BY id DESC
+             LIMIT ? OFFSET ?`,
+            [safeLimit, offset]
+        );
+
+        // Get total attendance records
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) AS total FROM attendance"
+        );
+
+        const totalAttendance = countResult[0].total;
+        const totalPages = Math.ceil(totalAttendance / safeLimit);
+
+        res.json({
+            attendance: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalAttendance,
+                totalPages
+            }
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 
@@ -31,11 +68,74 @@ exports.getAttendanceById = async (req, res) => {
 // GET /api/attendance/student/:studentId
 exports.getAttendanceByStudent = async (req, res) => {
     try {
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        // Prevent invalid values
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+
+        const offset = (safePage - 1) * safeLimit;
+
+        // Get student's attendance for current page
         const [rows] = await db.query(
-            "SELECT * FROM attendance WHERE student_id = ? ORDER BY attendance_date",
+            `SELECT * FROM attendance
+             WHERE student_id = ?
+             ORDER BY attendance_date DESC
+             LIMIT ? OFFSET ?`,
+            [req.params.studentId, safeLimit, offset]
+        );
+
+        // Get total attendance records for this student
+        const [countResult] = await db.query(
+            `SELECT COUNT(*) AS total
+             FROM attendance
+             WHERE student_id = ?`,
             [req.params.studentId]
         );
-        res.json(rows);
+
+        const totalAttendance = countResult[0].total;
+        const totalPages = Math.ceil(totalAttendance / safeLimit);
+
+        res.json({
+            attendance: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalAttendance,
+                totalPages
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
+    }
+};
+
+// GET /api/attendance/student/:studentId/summary
+exports.getAttendanceSummaryByStudent = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT status, COUNT(*) as count FROM attendance WHERE student_id = ? GROUP BY status",
+            [req.params.studentId]
+        );
+
+        const summary = { present: 0, absent: 0, late: 0, total: 0 };
+        rows.forEach((r) => {
+            summary[r.status] = r.count;
+            summary.total += r.count;
+        });
+
+        const percentage = summary.total > 0
+            ? Number(((summary.present / summary.total) * 100).toFixed(1))
+            : null;
+
+        res.json({ ...summary, percentage });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error", details: err.message });
@@ -73,20 +173,52 @@ exports.createAttendance = async (req, res) => {
 // PUT /api/attendance/:id
 exports.updateAttendance = async (req, res) => {
     try {
-        const { status, remarks } = req.body;
+        const allowedFields = [
+            "status",
+            "remarks"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            "UPDATE attendance SET status = ?, remarks = ? WHERE id = ?",
-            [status, remarks, req.params.id]
+            `UPDATE attendance
+             SET ${updates.join(", ")}
+             WHERE id = ?`,
+            values
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Attendance record not found" });
+            return res.status(404).json({
+                error: "Attendance record not found"
+            });
         }
-        res.json({ message: "Attendance updated successfully" });
+
+        res.json({
+            message: "Attendance updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 

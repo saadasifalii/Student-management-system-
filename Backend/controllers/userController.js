@@ -56,21 +56,69 @@ exports.createUser = async (req, res) => {
 
 // PUT /api/users/:id
 // Updates profile info. Password change is handled separately (see changePassword).
+// PUT /api/users/:id
+// Updates only the fields that are provided.
+// Password change is handled separately (see changePassword).
 exports.updateUser = async (req, res) => {
     try {
-        const { name, email, role, status } = req.body;
+        const allowedFields = [
+            "name",
+            "email",
+            "role",
+            "status"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        // Only include fields that were actually provided
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        // Nothing to update
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        // Add ID for WHERE condition
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            "UPDATE users SET name = ?, email = ?, role = ?, status = ? WHERE id = ?",
-            [name, email, role, status, req.params.id]
+            `UPDATE users
+             SET ${updates.join(", ")}
+             WHERE id = ?`,
+            values
         );
 
-        if (result.affectedRows === 0) return res.status(404).json({ error: "User not found" });
-        res.json({ message: "User updated successfully" });
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "User not found"
+            });
+        }
+
+        res.json({
+            message: "User updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
-        if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "Email already registered" });
-        res.status(500).json({ error: "Database error", details: err.message });
+
+        if (err.code === "ER_DUP_ENTRY") {
+            return res.status(409).json({
+                error: "Email already registered"
+            });
+        }
+
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 

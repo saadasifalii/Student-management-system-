@@ -3,11 +3,48 @@ const db = require("../db");
 // GET /api/course-offerings
 exports.getAllCourseOfferings = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM course_offerings");
-        res.json(rows);
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        // Prevent invalid values
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+
+        const offset = (safePage - 1) * safeLimit;
+
+        // Get course offerings for current page
+        const [rows] = await db.query(
+            `SELECT * FROM course_offerings
+             ORDER BY id DESC
+             LIMIT ? OFFSET ?`,
+            [safeLimit, offset]
+        );
+
+        // Get total course offerings
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) AS total FROM course_offerings"
+        );
+
+        const totalCourseOfferings = countResult[0].total;
+        const totalPages = Math.ceil(totalCourseOfferings / safeLimit);
+
+        res.json({
+            courseOfferings: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalCourseOfferings,
+                totalPages
+            }
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 
@@ -63,26 +100,62 @@ exports.createCourseOffering = async (req, res) => {
 // PUT /api/course-offerings/:id
 exports.updateCourseOffering = async (req, res) => {
     try {
-        const { teacher_id, room, schedule } = req.body;
+        const allowedFields = [
+            "teacher_id",
+            "room",
+            "schedule"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            `UPDATE course_offerings SET teacher_id = ?, room = ?, schedule = ? WHERE id = ?`,
-            [teacher_id, room, schedule, req.params.id]
+            `UPDATE course_offerings
+             SET ${updates.join(", ")}
+             WHERE id = ?`,
+            values
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Course offering not found" });
+            return res.status(404).json({
+                error: "Course offering not found"
+            });
         }
-        res.json({ message: "Course offering updated successfully" });
+
+        res.json({
+            message: "Course offering updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
+
         if (err.code === "ER_NO_REFERENCED_ROW_2") {
-            return res.status(400).json({ error: "Invalid teacher_id" });
+            return res.status(400).json({
+                error: "Invalid teacher_id"
+            });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
-
 // DELETE /api/course-offerings/:id
 exports.deleteCourseOffering = async (req, res) => {
     try {

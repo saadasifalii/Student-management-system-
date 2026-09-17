@@ -63,28 +63,63 @@ exports.createDegreeProgram = async (req, res) => {
 // PUT /api/degree-programs/:id
 exports.updateDegreeProgram = async (req, res) => {
     try {
-        const {
-            name, code, duration_years,
-            total_semesters, description, status
-        } = req.body;
+        const allowedFields = [
+            "name",
+            "code",
+            "duration_years",
+            "total_semesters",
+            "description",
+            "status"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            `UPDATE degree_programs SET
-             name = ?, code = ?, duration_years = ?, total_semesters = ?, description = ?, status = ?
+            `UPDATE degree_programs
+             SET ${updates.join(", ")}
              WHERE id = ?`,
-            [name, code, duration_years, total_semesters, description, status, req.params.id]
+            values
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Degree program not found" });
+            return res.status(404).json({
+                error: "Degree program not found"
+            });
         }
-        res.json({ message: "Degree program updated successfully" });
+
+        res.json({
+            message: "Degree program updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
+
         if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({ error: "Program code already exists" });
+            return res.status(409).json({
+                error: "Program code already exists"
+            });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 

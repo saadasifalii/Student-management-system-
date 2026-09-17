@@ -56,24 +56,60 @@ exports.createSection = async (req, res) => {
         res.status(500).json({ error: "Database error", details: err.message });
     }
 };
-
 // PUT /api/sections/:id
 exports.updateSection = async (req, res) => {
     try {
-        const { name, semester_number, capacity, status } = req.body;
+        const allowedFields = [
+            "name",
+            "semester_number",
+            "capacity",
+            "status"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        // Only update fields that are actually provided
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        // Nothing to update
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        // Add section ID for WHERE condition
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            `UPDATE sections SET name = ?, semester_number = ?, capacity = ?, status = ? WHERE id = ?`,
-            [name, semester_number, capacity, status, req.params.id]
+            `UPDATE sections
+             SET ${updates.join(", ")}
+             WHERE id = ?`,
+            values
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Section not found" });
+            return res.status(404).json({
+                error: "Section not found"
+            });
         }
-        res.json({ message: "Section updated successfully" });
+
+        res.json({
+            message: "Section updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 

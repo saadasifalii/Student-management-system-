@@ -55,23 +55,59 @@ exports.createDepartment = async (req, res) => {
 // PUT /api/departments/:id
 exports.updateDepartment = async (req, res) => {
     try {
-        const { name, code, description } = req.body;
+        const allowedFields = [
+            "name",
+            "code",
+            "description"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            "UPDATE departments SET name = ?, code = ?, description = ? WHERE id = ?",
-            [name, code, description, req.params.id]
+            `UPDATE departments
+             SET ${updates.join(", ")}
+             WHERE id = ?`,
+            values
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Department not found" });
+            return res.status(404).json({
+                error: "Department not found"
+            });
         }
-        res.json({ message: "Department updated successfully" });
+
+        res.json({
+            message: "Department updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
+
         if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({ error: "Department code already exists" });
+            return res.status(409).json({
+                error: "Department code already exists"
+            });
         }
-        res.status(500).json({ error: "Database error" });
+
+        res.status(500).json({
+            error: "Database error"
+        });
     }
 };
 

@@ -29,6 +29,8 @@ const userRoutes = require("./routes/userRoutes");
 
 const authRoutes = require("./routes/authRoutes");
 
+const path = require("path");
+
 
 const PORT = process.env.PORT || 5000;
 
@@ -45,6 +47,7 @@ console.log("AUTH ROUTE LOADED");
 app.use(verifyToken);
 
 app.use("/api/users", userRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/students", studentRoutes);
 app.use("/api/teachers", teacherRoutes);

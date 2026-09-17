@@ -3,11 +3,48 @@ const db = require("../db");
 // GET /api/courses
 exports.getAllCourses = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM courses");
-        res.json(rows);
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        // Prevent invalid values
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+
+        const offset = (safePage - 1) * safeLimit;
+
+        // Get courses for current page
+        const [rows] = await db.query(
+            `SELECT * FROM courses
+             ORDER BY id DESC
+             LIMIT ? OFFSET ?`,
+            [safeLimit, offset]
+        );
+
+        // Get total number of courses
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) AS total FROM courses"
+        );
+
+        const totalCourses = countResult[0].total;
+        const totalPages = Math.ceil(totalCourses / safeLimit);
+
+        res.json({
+            courses: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalCourses,
+                totalPages
+            }
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 
@@ -63,29 +100,63 @@ exports.createCourse = async (req, res) => {
 // PUT /api/courses/:id
 exports.updateCourse = async (req, res) => {
     try {
-        const {
-            course_code, course_name, description,
-            credit_hours, semester_number, status
-        } = req.body;
+        const allowedFields = [
+            "course_code",
+            "course_name",
+            "description",
+            "credit_hours",
+            "semester_number",
+            "status"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            `UPDATE courses SET
-             course_code = ?, course_name = ?, description = ?,
-             credit_hours = ?, semester_number = ?, status = ?
+            `UPDATE courses
+             SET ${updates.join(", ")}
              WHERE id = ?`,
-            [course_code, course_name, description, credit_hours, semester_number, status, req.params.id]
+            values
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Course not found" });
+            return res.status(404).json({
+                error: "Course not found"
+            });
         }
-        res.json({ message: "Course updated successfully" });
+
+        res.json({
+            message: "Course updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
+
         if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({ error: "Course code already exists" });
+            return res.status(409).json({
+                error: "Course code already exists"
+            });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 

@@ -24,7 +24,7 @@ function Login() {
     };
 
     return (
-        <div className="container d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+        <div className="login-page-bg d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
             <div className="card p-4 shadow-sm" style={{ width: '350px' }}>
                 <h3 className="text-center mb-4">Student Management System</h3>
                 <form onSubmit={handleSubmit}>

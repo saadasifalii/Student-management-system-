@@ -2,13 +2,51 @@ const db = require("../db");
 
 /* ---------- SEMESTER RESULTS ---------- */
 
+// GET /api/semester-results
 exports.getAllSemesterResults = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM student_semester_results");
-        res.json(rows);
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        // Prevent invalid values
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+
+        const offset = (safePage - 1) * safeLimit;
+
+        // Get semester results for current page
+        const [rows] = await db.query(
+            `SELECT * FROM student_semester_results
+             ORDER BY id DESC
+             LIMIT ? OFFSET ?`,
+            [safeLimit, offset]
+        );
+
+        // Get total number of results
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) AS total FROM student_semester_results"
+        );
+
+        const totalSemesterResults = countResult[0].total;
+        const totalPages = Math.ceil(totalSemesterResults / safeLimit);
+
+        res.json({
+            semesterResults: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalSemesterResults,
+                totalPages
+            }
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 
@@ -23,16 +61,51 @@ exports.getSemesterResultById = async (req, res) => {
     }
 };
 
+// GET /api/semester-results/student/:studentId
 exports.getSemesterResultsByStudent = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+
+        const offset = (safePage - 1) * safeLimit;
+
         const [rows] = await db.query(
-            "SELECT * FROM student_semester_results WHERE student_id = ?",
+            `SELECT * FROM student_semester_results
+             WHERE student_id = ?
+             ORDER BY id DESC
+             LIMIT ? OFFSET ?`,
+            [req.params.studentId, safeLimit, offset]
+        );
+
+        const [countResult] = await db.query(
+            `SELECT COUNT(*) AS total
+             FROM student_semester_results
+             WHERE student_id = ?`,
             [req.params.studentId]
         );
-        res.json(rows);
+
+        const totalSemesterResults = countResult[0].total;
+        const totalPages = Math.ceil(totalSemesterResults / safeLimit);
+
+        res.json({
+            semesterResults: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalSemesterResults,
+                totalPages
+            }
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 
@@ -62,20 +135,54 @@ exports.createSemesterResult = async (req, res) => {
 
 exports.updateSemesterResult = async (req, res) => {
     try {
-        const { total_credit_hours, total_quality_points, semester_gpa, academic_status } = req.body;
+        const allowedFields = [
+            "total_credit_hours",
+            "total_quality_points",
+            "semester_gpa",
+            "academic_status"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        values.push(req.params.id);
 
         const [result] = await db.query(
             `UPDATE student_semester_results
-             SET total_credit_hours = ?, total_quality_points = ?, semester_gpa = ?, academic_status = ?
+             SET ${updates.join(", ")}
              WHERE id = ?`,
-            [total_credit_hours, total_quality_points, semester_gpa, academic_status, req.params.id]
+            values
         );
 
-        if (result.affectedRows === 0) return res.status(404).json({ error: "Semester result not found" });
-        res.json({ message: "Semester result updated successfully" });
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Semester result not found"
+            });
+        }
+
+        res.json({
+            message: "Semester result updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({
+            error: "Database error",
+            details: err.message
+        });
     }
 };
 

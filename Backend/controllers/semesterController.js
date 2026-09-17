@@ -56,25 +56,65 @@ exports.createSemester = async (req, res) => {
 // PUT /api/semesters/:id
 exports.updateSemester = async (req, res) => {
     try {
-        const { name, term, year, start_date, end_date, status } = req.body;
+        const allowedFields = [
+            "name",
+            "term",
+            "year",
+            "start_date",
+            "end_date",
+            "status"
+        ];
+
+        const updates = [];
+        const values = [];
+
+        // Only update fields that are actually provided
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        // Nothing to update
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: "No fields provided for update"
+            });
+        }
+
+        // Add semester ID for WHERE condition
+        values.push(req.params.id);
 
         const [result] = await db.query(
-            `UPDATE semesters SET
-             name = ?, term = ?, year = ?, start_date = ?, end_date = ?, status = ?
+            `UPDATE semesters
+             SET ${updates.join(", ")}
              WHERE id = ?`,
-            [name, term, year, start_date, end_date, status, req.params.id]
+            values
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Semester not found" });
+            return res.status(404).json({
+                error: "Semester not found"
+            });
         }
-        res.json({ message: "Semester updated successfully" });
+
+        res.json({
+            message: "Semester updated successfully"
+        });
+
     } catch (err) {
         console.error(err);
+
         if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({ error: "A semester with this term and year already exists" });
+            return res.status(409).json({
+                error: "A semester with this term and year already exists"
+            });
         }
-        res.status(500).json({ error: "Database error" });
+
+        res.status(500).json({
+            error: "Database error"
+        });
     }
 };
 
