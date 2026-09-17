@@ -17,11 +17,35 @@ function Students() {
 
     const fetchStudents = async () => {
         setLoading(true);
+        setError('');
 
         try {
             const response = await api.get('/students');
-            setStudents(response.data);
-        } catch {
+
+            // Handle different backend response formats
+            let studentData = [];
+
+            if (Array.isArray(response.data)) {
+                // Backend returns:
+                // [ {...}, {...} ]
+                studentData = response.data;
+            } else if (Array.isArray(response.data.students)) {
+                // Backend returns:
+                // { students: [...] }
+                studentData = response.data.students;
+            } else if (Array.isArray(response.data.data)) {
+                // Backend returns:
+                // { data: [...] }
+                studentData = response.data.data;
+            }
+
+            setStudents(studentData);
+
+        } catch (err) {
+            console.error('Failed to load students:', err);
+            console.error('Server response:', err.response?.data);
+
+            setStudents([]);
             setError('Failed to load students.');
         } finally {
             setLoading(false);
@@ -50,8 +74,13 @@ function Students() {
 
         try {
             await api.delete(`/students/${id}`);
+
+            // Reload students after deleting
             fetchStudents();
+
         } catch (err) {
+            console.error('Delete student error:', err);
+
             alert(
                 err.response?.data?.error ||
                 'Failed to delete student.'
@@ -68,6 +97,7 @@ function Students() {
         <Layout>
             <div className="container mt-4">
 
+                {/* HEADER */}
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2>Students</h2>
 
@@ -81,15 +111,20 @@ function Students() {
                     )}
                 </div>
 
-                {loading && <p>Loading...</p>}
+                {/* LOADING */}
+                {loading && (
+                    <p>Loading...</p>
+                )}
 
+                {/* ERROR */}
                 {error && (
                     <div className="alert alert-danger">
                         {error}
                     </div>
                 )}
 
-                {!loading && !error && (
+                {/* STUDENTS TABLE */}
+                {!loading && !error && students.length > 0 && (
                     <table className="table table-striped table-hover">
                         <thead>
                             <tr>
@@ -99,22 +134,31 @@ function Students() {
                                 <th>Batch Year</th>
                                 <th>Status</th>
 
-                                {isAdmin && <th>Actions</th>}
+                                {isAdmin && (
+                                    <th>Actions</th>
+                                )}
                             </tr>
                         </thead>
 
                         <tbody>
                             {students.map((s) => (
                                 <tr key={s.id}>
-                                    <td>{s.roll_number}</td>
+
+                                    <td>
+                                        {s.roll_number}
+                                    </td>
 
                                     <td>
                                         {s.first_name} {s.last_name}
                                     </td>
 
-                                    <td>{s.registration_number}</td>
+                                    <td>
+                                        {s.registration_number}
+                                    </td>
 
-                                    <td>{s.batch_year}</td>
+                                    <td>
+                                        {s.batch_year}
+                                    </td>
 
                                     <td>
                                         <span
@@ -130,6 +174,7 @@ function Students() {
 
                                     {isAdmin && (
                                         <td>
+
                                             <button
                                                 className="btn btn-sm btn-outline-primary me-2"
                                                 onClick={() =>
@@ -147,17 +192,20 @@ function Students() {
                                             >
                                                 Delete
                                             </button>
+
                                         </td>
                                     )}
+
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 )}
 
-                {students.length === 0 &&
-                    !loading &&
-                    !error && (
+                {/* NO STUDENTS */}
+                {!loading &&
+                    !error &&
+                    students.length === 0 && (
                         <p className="text-muted">
                             No students found.
                         </p>
@@ -165,6 +213,7 @@ function Students() {
 
             </div>
 
+            {/* STUDENT FORM */}
             {showForm && (
                 <StudentForm
                     student={editingStudent}
@@ -172,6 +221,7 @@ function Students() {
                     onSaved={handleSaved}
                 />
             )}
+
         </Layout>
     );
 }

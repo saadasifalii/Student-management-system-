@@ -6,38 +6,109 @@ import CourseOfferingForm from './CourseOfferingForm';
 
 function CourseOfferings() {
     const { user } = useAuth();
+
     const [offerings, setOfferings] = useState([]);
     const [courses, setCourses] = useState([]);
     const [teachers, setTeachers] = useState([]);
     const [sections, setSections] = useState([]);
     const [semesters, setSemesters] = useState([]);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
     const [showForm, setShowForm] = useState(false);
     const [editingOffering, setEditingOffering] = useState(null);
 
     const isAdmin = user?.role === 'admin';
 
-    // Since course_offerings only stores IDs, we fetch the related lists too,
-    // so the table can show readable names instead of raw numbers
+    // Convert API response into an array
+    const getArray = (response, key) => {
+        if (Array.isArray(response?.data)) {
+            return response.data;
+        }
+
+        if (key && Array.isArray(response?.data?.[key])) {
+            return response.data[key];
+        }
+
+        if (Array.isArray(response?.data?.data)) {
+            return response.data.data;
+        }
+
+        return [];
+    };
+
+    // Fetch all required data
     const fetchData = async () => {
         setLoading(true);
+        setError('');
+
         try {
-            const [offeringsRes, coursesRes, teachersRes, sectionsRes, semestersRes] = await Promise.all([
+            const [
+                offeringsRes,
+                coursesRes,
+                teachersRes,
+                sectionsRes,
+                semestersRes
+            ] = await Promise.all([
                 api.get('/course-offerings'),
                 api.get('/courses'),
                 api.get('/teachers'),
                 api.get('/sections'),
                 api.get('/semesters'),
             ]);
-            setOfferings(offeringsRes.data);
-            setCourses(coursesRes.data);
-            setTeachers(teachersRes.data);
-            setSections(sectionsRes.data);
-            setSemesters(semestersRes.data);
-        // eslint-disable-next-line no-unused-vars
+
+            const offeringsData = getArray(
+                offeringsRes,
+                'offerings'
+            );
+
+            const coursesData = getArray(
+                coursesRes,
+                'courses'
+            );
+
+            const teachersData = getArray(
+                teachersRes,
+                'teachers'
+            );
+
+            const sectionsData = getArray(
+                sectionsRes,
+                'sections'
+            );
+
+            const semestersData = getArray(
+                semestersRes,
+                'semesters'
+            );
+
+            setOfferings(offeringsData);
+            setCourses(coursesData);
+            setTeachers(teachersData);
+            setSections(sectionsData);
+            setSemesters(semestersData);
+
         } catch (err) {
-            setError('Failed to load course offerings.');
+            console.error(
+                'Failed to load course offerings:',
+                err
+            );
+
+            console.error(
+                'Server response:',
+                err.response?.data
+            );
+
+            setOfferings([]);
+            setCourses([]);
+            setTeachers([]);
+            setSections([]);
+            setSemesters([]);
+
+            setError(
+                'Failed to load course offerings.'
+            );
         } finally {
             setLoading(false);
         }
@@ -46,37 +117,87 @@ function CourseOfferings() {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Helper functions to turn an ID into a readable name for display
-    const getCourseName = (id) => courses.find((c) => c.id === id)?.course_name || '—';
-    const getTeacherName = (id) => {
-        const t = teachers.find((t) => t.id === id);
-        return t ? `${t.first_name} ${t.last_name}` : '—';
+    // Get course name
+    const getCourseName = (id) => {
+        return (
+            courses.find((c) => c.id === id)?.course_name ||
+            '—'
+        );
     };
-    const getSectionName = (id) => sections.find((s) => s.id === id)?.name || '—';
-    const getSemesterName = (id) => semesters.find((s) => s.id === id)?.name || '—';
 
+    // Get teacher name
+    const getTeacherName = (id) => {
+        const teacher = teachers.find(
+            (t) => t.id === id
+        );
+
+        return teacher
+            ? `${teacher.first_name} ${teacher.last_name}`
+            : '—';
+    };
+
+    // Get section name
+    const getSectionName = (id) => {
+        return (
+            sections.find((s) => s.id === id)?.name ||
+            '—'
+        );
+    };
+
+    // Get semester name
+    const getSemesterName = (id) => {
+        return (
+            semesters.find((s) => s.id === id)?.name ||
+            '—'
+        );
+    };
+
+    // Add course offering
     const handleAddClick = () => {
         setEditingOffering(null);
         setShowForm(true);
     };
 
+    // Edit course offering
     const handleEditClick = (offering) => {
         setEditingOffering(offering);
         setShowForm(true);
     };
 
+    // Delete course offering
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this course offering?')) return;
+        if (
+            !window.confirm(
+                'Are you sure you want to delete this course offering?'
+            )
+        ) {
+            return;
+        }
+
         try {
-            await api.delete(`/course-offerings/${id}`);
+            await api.delete(
+                `/course-offerings/${id}`
+            );
+
             fetchData();
+
         } catch (err) {
-            alert(err.response?.data?.error || 'Failed to delete course offering.');
+            console.error(
+                'Delete course offering error:',
+                err
+            );
+
+            alert(
+                err.response?.data?.error ||
+                'Failed to delete course offering.'
+            );
         }
     };
 
+    // After saving
     const handleSaved = () => {
         setShowForm(false);
         fetchData();
@@ -84,67 +205,149 @@ function CourseOfferings() {
 
     return (
         <Layout>
+
+            {/* HEADER */}
             <div className="d-flex justify-content-between align-items-center mb-3">
+
                 <h2>Course Offerings</h2>
+
                 {isAdmin && (
-                    <button className="btn btn-primary" onClick={handleAddClick}>
+                    <button
+                        className="btn btn-primary"
+                        onClick={handleAddClick}
+                    >
                         + Add Course Offering
                     </button>
                 )}
+
             </div>
 
-            {loading && <p>Loading...</p>}
-            {error && <div className="alert alert-danger">{error}</div>}
+            {/* LOADING */}
+            {loading && (
+                <p>Loading...</p>
+            )}
 
-            {!loading && !error && (
-                <table className="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Course</th>
-                            <th>Teacher</th>
-                            <th>Section</th>
-                            <th>Semester</th>
-                            <th>Room</th>
-                            <th>Schedule</th>
-                            {isAdmin && <th>Actions</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {offerings.map((o) => (
-                            <tr key={o.id}>
-                                <td>{getCourseName(o.course_id)}</td>
-                                <td>{getTeacherName(o.teacher_id)}</td>
-                                <td>{getSectionName(o.section_id)}</td>
-                                <td>{getSemesterName(o.semester_id)}</td>
-                                <td>{o.room}</td>
-                                <td>{o.schedule}</td>
+            {/* ERROR */}
+            {error && (
+                <div className="alert alert-danger">
+                    {error}
+                </div>
+            )}
+
+            {/* TABLE */}
+            {!loading &&
+                !error &&
+                offerings.length > 0 && (
+
+                    <table className="table table-striped table-hover">
+
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Teacher</th>
+                                <th>Section</th>
+                                <th>Semester</th>
+                                <th>Room</th>
+                                <th>Schedule</th>
+
                                 {isAdmin && (
-                                    <td>
-                                        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEditClick(o)}>
-                                            Edit
-                                        </button>
-                                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(o.id)}>
-                                            Delete
-                                        </button>
-                                    </td>
+                                    <th>Actions</th>
                                 )}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+                        </thead>
 
-            {offerings.length === 0 && !loading && !error && (
-                <p className="text-muted">No course offerings found.</p>
-            )}
+                        <tbody>
 
+                            {offerings.map((o) => (
+                                <tr key={o.id}>
+
+                                    <td>
+                                        {getCourseName(
+                                            o.course_id
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        {getTeacherName(
+                                            o.teacher_id
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        {getSectionName(
+                                            o.section_id
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        {getSemesterName(
+                                            o.semester_id
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        {o.room}
+                                    </td>
+
+                                    <td>
+                                        {o.schedule}
+                                    </td>
+
+                                    {isAdmin && (
+                                        <td>
+
+                                            <button
+                                                className="btn btn-sm btn-outline-primary me-2"
+                                                onClick={() =>
+                                                    handleEditClick(o)
+                                                }
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                className="btn btn-sm btn-outline-danger"
+                                                onClick={() =>
+                                                    handleDelete(
+                                                        o.id
+                                                    )
+                                                }
+                                            >
+                                                Delete
+                                            </button>
+
+                                        </td>
+                                    )}
+
+                                </tr>
+                            ))}
+
+                        </tbody>
+
+                    </table>
+                )}
+
+            {/* NO DATA */}
+            {!loading &&
+                !error &&
+                offerings.length === 0 && (
+
+                    <p className="text-muted">
+                        No course offerings found.
+                    </p>
+                )}
+
+            {/* FORM */}
             {showForm && (
                 <CourseOfferingForm
                     offering={editingOffering}
-                    onClose={() => setShowForm(false)}
+                    onClose={() =>
+                        setShowForm(false)
+                    }
                     onSaved={handleSaved}
                 />
             )}
+
         </Layout>
     );
 }
