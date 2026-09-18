@@ -133,6 +133,9 @@ body {
 }
 
 /* ---------- Login page ---------- */
+/* ---------- Login page ---------- */
+
 .login-page-bg {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: #ffffff;
+    min-height: 100vh;
 }

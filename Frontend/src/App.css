@@ -1,6 +1,6 @@
-/* =========================================================
+/* ================================
    LOGIN PAGE
-========================================================= */
+================================ */
 
 .login-page {
     min-height: 100vh;
@@ -10,138 +10,146 @@
     align-items: center;
     justify-content: center;
 
-    padding: 30px;
+    padding: 20px;
 
-    background:
-        linear-gradient(
-            135deg,
-            #283b92 0%,
-            #3549a5 50%,
-            #293b91 100%
-        );
+    /* WHITE BACKGROUND */
+    background: #ffffff !important;
+
+    box-sizing: border-box;
 }
 
 
-/* =========================================================
+/* ================================
    LOGIN CARD
-========================================================= */
+================================ */
 
 .login-card {
     width: 100%;
-    max-width: 520px;
+    max-width: 500px;
 
     background: #ffffff;
 
     border-radius: 18px;
 
-    padding: 38px;
+    padding: 30px 40px 24px;
 
-    box-shadow:
-        0 25px 60px rgba(0, 0, 0, 0.18);
+    box-sizing: border-box;
 
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.16);
 }
 
 
-/* =========================================================
-   BRAND
-========================================================= */
+/* ================================
+   LOGIN BRAND
+================================ */
 
 .login-brand {
     display: flex;
     align-items: center;
     justify-content: center;
 
-    gap: 12px;
+    gap: 10px;
 
-    margin-bottom: 34px;
+    margin-bottom: 27px;
 }
 
 .graduation-cap {
-    font-size: 42px;
-    line-height: 1;
+    width: 45px;
+    height: 45px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 31px;
 }
 
+.brand-text h2,
 .login-brand h2 {
     margin: 0;
 
-    color: #182d78;
+    color: #17367f;
 
     font-size: 19px;
+
     font-weight: 700;
 }
 
+.brand-text p,
 .login-brand p {
-    margin: 4px 0 0;
+    margin: 3px 0 0;
 
-    color: #8996b1;
+    color: #8290aa;
 
     font-size: 12px;
 }
 
 
-/* =========================================================
+/* ================================
    WELCOME
-========================================================= */
+================================ */
 
 .login-welcome {
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .login-welcome h1 {
     margin: 0;
 
-    color: #102452;
+    color: #092c68;
 
-    font-size: 31px;
+    font-size: 30px;
+
     font-weight: 700;
 }
 
 .login-welcome p {
-    margin: 7px 0 0;
+    margin: 5px 0 0;
 
-    color: #8492ad;
+    color: #7d8da8;
 
-    font-size: 15px;
+    font-size: 14px;
 }
 
 
-/* =========================================================
+/* ================================
    ROLE SELECTOR
-========================================================= */
+================================ */
 
 .role-selector {
     width: 100%;
 
     display: grid;
 
-    grid-template-columns:
-        repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr);
 
-    gap: 4px;
+    gap: 3px;
 
-    padding: 5px;
+    padding: 4px;
 
-    margin-bottom: 27px;
+    margin-bottom: 22px;
 
     background: #edf2fa;
 
-    border-radius: 14px;
+    border-radius: 12px;
+
+    box-sizing: border-box;
 }
 
-
 .role-button {
-    height: 48px;
+    height: 44px;
 
     border: none;
 
-    border-radius: 11px;
+    border-radius: 9px;
 
     background: transparent;
 
-    color: #71809c;
+    color: #657694;
 
-    font-size: 14px;
+    font-family: inherit;
+
+    font-size: 13px;
 
     font-weight: 500;
 
@@ -150,123 +158,109 @@
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
-    gap: 7px;
-
-    transition: 0.2s ease;
+    gap: 6px;
 }
-
-
-.role-button:hover {
-    color: #1765e8;
-}
-
 
 .role-button.active {
-    color: white;
-
     background: #1768e8;
 
-    box-shadow:
-        0 5px 14px
-        rgba(23, 104, 232, 0.25);
-}
+    color: #ffffff;
 
+    box-shadow: 0 5px 12px rgba(23, 104, 232, 0.25);
+}
 
 .role-icon {
-    font-size: 17px;
+    font-size: 16px;
 }
 
 
-/* =========================================================
+/* ================================
    INPUTS
-========================================================= */
+================================ */
 
 .login-input-group {
-    margin-bottom: 19px;
+    margin-bottom: 17px;
 }
-
 
 .login-input-group label {
     display: block;
 
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 
-    color: #1d2b4b;
+    color: #122d61;
 
-    font-size: 14px;
+    font-size: 13px;
 
     font-weight: 600;
 }
 
-
 .login-input-group input {
     width: 100%;
 
-    height: 48px;
+    height: 42px;
 
-    padding: 0 15px;
+    padding: 0 13px;
 
-    border: 1px solid #d8dfeb;
+    border: 1px solid #d5ddea;
 
-    border-radius: 9px;
+    border-radius: 8px;
 
     outline: none;
 
     background: #ffffff;
 
-    color: #1d2b4b;
+    color: #132f67;
 
-    font-size: 14px;
+    font-family: inherit;
 
-    transition: 0.2s ease;
+    font-size: 13px;
+
+    box-sizing: border-box;
 }
-
-
-.login-input-group input::placeholder {
-    color: #a6afc0;
-}
-
 
 .login-input-group input:focus {
-    border-color: #2269e8;
+    border-color: #2871eb;
 
-    box-shadow:
-        0 0 0 3px
-        rgba(34, 105, 232, 0.10);
+    box-shadow: 0 0 0 3px rgba(40, 113, 235, 0.10);
 }
 
 
-/* =========================================================
+/* ================================
    ERROR
-========================================================= */
+================================ */
 
 .login-error {
-    margin-bottom: 16px;
+    width: 100%;
 
-    padding: 11px 13px;
+    margin-bottom: 14px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #ffcaca;
 
     border-radius: 8px;
 
-    border: 1px solid #ffd1d1;
+    background: #fff1f1;
 
-    background: #fff2f2;
+    color: #d12f2f;
 
-    color: #c62828;
+    font-size: 12px;
 
-    font-size: 13px;
+    box-sizing: border-box;
 }
 
 
-/* =========================================================
+/* ================================
    LOGIN BUTTON
-========================================================= */
+================================ */
 
 .login-submit {
     width: 100%;
 
-    height: 48px;
+    height: 42px;
 
     border: none;
 
@@ -276,59 +270,48 @@
 
     color: #ffffff;
 
-    font-size: 15px;
+    font-family: inherit;
+
+    font-size: 14px;
 
     font-weight: 600;
 
     cursor: pointer;
-
-    transition: 0.2s ease;
 }
-
 
 .login-submit:hover {
     background: #26358e;
-
-    transform: translateY(-1px);
-
-    box-shadow:
-        0 7px 18px
-        rgba(48, 63, 161, 0.25);
 }
-
 
 .login-submit:disabled {
     opacity: 0.65;
 
     cursor: not-allowed;
-
-    transform: none;
 }
 
 
-/* =========================================================
+/* ================================
    FOOTER
-========================================================= */
+================================ */
 
 .login-selected-role {
-    margin-top: 20px;
+    margin-top: 15px;
 
     text-align: center;
 
-    color: #98a3b7;
+    color: #96a2b7;
 
-    font-size: 12px;
+    font-size: 11px;
 }
-
 
 .login-selected-role strong {
-    color: #344da9;
+    color: #304ba8;
 }
 
 
-/* =========================================================
+/* ================================
    MOBILE
-========================================================= */
+================================ */
 
 @media (max-width: 600px) {
 
@@ -337,22 +320,12 @@
     }
 
     .login-card {
-        padding: 28px 22px;
-    }
+        max-width: 430px;
 
-    .login-brand h2 {
-        font-size: 17px;
+        padding: 27px 25px 22px;
     }
 
     .login-welcome h1 {
         font-size: 27px;
-    }
-
-    .role-button {
-        font-size: 12px;
-    }
-
-    .role-icon {
-        font-size: 15px;
     }
 }
