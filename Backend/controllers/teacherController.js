@@ -38,7 +38,7 @@ exports.getAllTeachers = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Teacher get all error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -58,7 +58,7 @@ exports.getTeacherById = async (req, res) => {
         res.json(rows[0]);
 
     } catch (err) {
-        console.error(err);
+        console.error("Teacher get by ID error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -93,7 +93,7 @@ exports.createTeacher = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Teacher create error:", err);
 
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
@@ -156,7 +156,7 @@ exports.updateTeacher = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Teacher update error:", err);
         res.status(500).json({
             error: "Database error"
         });
@@ -177,7 +177,7 @@ exports.deleteTeacher = async (req, res) => {
         res.json({ message: "Teacher deleted successfully" });
 
     } catch (err) {
-        console.error(err);
+        console.error("Teacher delete error:", err);
 
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
             return res.status(409).json({

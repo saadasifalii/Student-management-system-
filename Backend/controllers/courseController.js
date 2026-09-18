@@ -40,10 +40,9 @@ exports.getAllCourses = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Course get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -60,8 +59,8 @@ exports.getCourseById = async (req, res) => {
         }
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Course get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -86,14 +85,14 @@ exports.createCourse = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Course created successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Course create error:", err);
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({ error: "Course code already exists" });
         }
         if (err.code === "ER_NO_REFERENCED_ROW_2") {
             return res.status(400).json({ error: "Invalid department_id — department does not exist" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -145,7 +144,7 @@ exports.updateCourse = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Course update error:", err);
 
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
@@ -154,8 +153,8 @@ exports.updateCourse = async (req, res) => {
         }
 
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
+         
         });
     }
 };
@@ -172,10 +171,10 @@ exports.deleteCourse = async (req, res) => {
         }
         res.json({ message: "Course deleted successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Course delete error:", err);
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
             return res.status(409).json({ error: "Cannot delete — course is used in course offerings" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };

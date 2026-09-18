@@ -38,7 +38,7 @@ exports.getAllStudents = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Student get all error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -58,7 +58,7 @@ exports.getStudentById = async (req, res) => {
         res.json(rows[0]);
 
     } catch (err) {
-        console.error(err);
+        console.error("Student get by ID error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -97,7 +97,7 @@ exports.createStudent = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Student create error:", err);
 
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
@@ -161,7 +161,7 @@ exports.updateStudent = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Student update error:", err);
         res.status(500).json({
             error: "Database error"
         });
@@ -183,7 +183,7 @@ exports.deleteStudent = async (req, res) => {
         res.json({ message: "Student deleted successfully" });
 
     } catch (err) {
-        console.error(err);
+        console.error("Student delete error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };

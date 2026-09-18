@@ -6,7 +6,7 @@ exports.getAllSemesters = async (req, res) => {
         const [rows] = await db.query("SELECT * FROM semesters");
         res.json(rows);
     } catch (err) {
-        console.error(err);
+        console.error("Semester get all error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -23,7 +23,7 @@ exports.getSemesterById = async (req, res) => {
         }
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
+        console.error("Semester get by ID error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -45,7 +45,7 @@ exports.createSemester = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Semester created successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Semester create error:", err);
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({ error: "A semester with this term and year already exists" });
         }
@@ -104,7 +104,7 @@ exports.updateSemester = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Semester update error:", err);
 
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
@@ -130,7 +130,7 @@ exports.deleteSemester = async (req, res) => {
         }
         res.json({ message: "Semester deleted successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Semester delete error:", err);
         // RESTRICT — blocks delete if sections, course_offerings, or student_semester_results reference it
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
             return res.status(409).json({ error: "Cannot delete semester — still in use by sections, offerings, or results" });

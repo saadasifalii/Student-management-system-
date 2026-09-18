@@ -10,8 +10,8 @@ exports.getAllUsers = async (req, res) => {
         const [rows] = await db.query("SELECT id, name, email, role, status, created_at, updated_at FROM users");
         res.json(rows);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("User get all error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -25,8 +25,8 @@ exports.getUserById = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: "User not found" });
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("User get by ID error:", err);
+        res.status(500).json({ error: "Database error"});
     }
 };
 
@@ -48,9 +48,9 @@ exports.createUser = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "User created successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("User create error:", err);
         if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "Email already registered" });
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -107,7 +107,7 @@ exports.updateUser = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("User update error:",err);
 
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
@@ -117,7 +117,7 @@ exports.updateUser = async (req, res) => {
 
         res.status(500).json({
             error: "Database error",
-            details: err.message
+           
         });
     }
 };
@@ -141,8 +141,8 @@ exports.changePassword = async (req, res) => {
         if (result.affectedRows === 0) return res.status(404).json({ error: "User not found" });
         res.json({ message: "Password updated successfully" });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("User password change error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -153,11 +153,11 @@ exports.deleteUser = async (req, res) => {
         if (result.affectedRows === 0) return res.status(404).json({ error: "User not found" });
         res.json({ message: "User deleted successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("User delete error:", err);
         // RESTRICT/CASCADE depends on your FK setup — teachers/students reference users.id
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
             return res.status(409).json({ error: "Cannot delete — user is still linked to a student or teacher record" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };

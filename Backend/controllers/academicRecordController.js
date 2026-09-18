@@ -42,10 +42,9 @@ exports.getAllSemesterResults = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Semester result get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -56,8 +55,8 @@ exports.getSemesterResultById = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: "Semester result not found" });
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Semester result get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -101,10 +100,9 @@ exports.getSemesterResultsByStudent = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Semester result get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -126,10 +124,10 @@ exports.createSemesterResult = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Semester result recorded successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Semester result create error:", err);
         if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "A result already exists for this student and semester" });
         if (err.code === "ER_NO_REFERENCED_ROW_2") return res.status(400).json({ error: "Invalid student_id or semester_id" });
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -178,10 +176,10 @@ exports.updateSemesterResult = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Semester result update error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
+     
         });
     }
 };
@@ -192,8 +190,8 @@ exports.deleteSemesterResult = async (req, res) => {
         if (result.affectedRows === 0) return res.status(404).json({ error: "Semester result not found" });
         res.json({ message: "Semester result deleted successfully" });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Semester result delete error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -204,8 +202,8 @@ exports.getAllCgpa = async (req, res) => {
         const [rows] = await db.query("SELECT * FROM student_cgpa");
         res.json(rows);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("CGPA get all error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -216,8 +214,8 @@ exports.getCgpaByStudent = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: "CGPA record not found for this student" });
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("CGPA get by student error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -242,9 +240,9 @@ exports.createOrUpdateCgpa = async (req, res) => {
 
         res.status(200).json({ message: "CGPA saved successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("CGPA save error:", err);
         if (err.code === "ER_NO_REFERENCED_ROW_2") return res.status(400).json({ error: "Invalid student_id" });
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -254,7 +252,7 @@ exports.deleteCgpa = async (req, res) => {
         if (result.affectedRows === 0) return res.status(404).json({ error: "CGPA record not found" });
         res.json({ message: "CGPA record deleted successfully" });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("CGPA delete error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };

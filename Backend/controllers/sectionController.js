@@ -6,7 +6,7 @@ exports.getAllSections = async (req, res) => {
         const [rows] = await db.query("SELECT * FROM sections");
         res.json(rows);
     } catch (err) {
-        console.error(err);
+        console.error("Section get all error:", err);
         res.status(500).json({ error: "Database error", details: err.message });
     }
 };
@@ -23,7 +23,7 @@ exports.getSectionById = async (req, res) => {
         }
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
+        console.error("Section get by ID error:", err);
         res.status(500).json({ error: "Database error", details: err.message });
     }
 };
@@ -49,7 +49,7 @@ exports.createSection = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Section created successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Section create error:", err);
         if (err.code === "ER_NO_REFERENCED_ROW_2") {
             return res.status(400).json({ error: "Invalid degree_program_id or semester_id" });
         }
@@ -129,6 +129,7 @@ exports.deleteSection = async (req, res) => {
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
             return res.status(409).json({ error: "Cannot delete — section is used in course offerings" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Section delete error:", err);
+        res.status(500).json({ error: "Database error"});
     }
 };

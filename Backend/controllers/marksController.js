@@ -38,10 +38,10 @@ exports.getAllQuizMarks = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Quiz mark get all error:", err);
         res.status(500).json({
             error: "Database error",
-            details: err.message
+       
         });
     }
 };
@@ -52,8 +52,8 @@ exports.getQuizMarkById = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: "Quiz mark not found" });
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Quiz mark get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -65,8 +65,8 @@ exports.getQuizMarksByStudent = async (req, res) => {
         );
         res.json(rows);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Quiz mark get by student error:", err);
+        res.status(500).json({ error: "Database error"});
     }
 };
 
@@ -88,10 +88,10 @@ exports.createQuizMark = async (req, res) => {
         );
         res.status(201).json({ id: result.insertId, message: "Quiz mark recorded successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Quiz mark create error:", err);
         if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "This quiz number already has marks recorded for this enrollment" });
         if (err.code === "ER_NO_REFERENCED_ROW_2") return res.status(400).json({ error: "Invalid student_id or course_offering_id" });
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -140,10 +140,9 @@ exports.updateQuizMark = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Quiz mark update error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -153,8 +152,8 @@ exports.deleteQuizMark = async (req, res) => {
         if (result.affectedRows === 0) return res.status(404).json({ error: "Quiz mark not found" });
         res.json({ message: "Quiz mark deleted successfully" });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Quiz mark delete error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -196,10 +195,10 @@ exports.getAllAssignmentMarks = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Assignment mark get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
+          
         });
     }
 };
@@ -210,8 +209,8 @@ exports.getAssignmentMarkById = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: "Assignment mark not found" });
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Assignment mark get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -223,8 +222,8 @@ exports.getAssignmentMarksByStudent = async (req, res) => {
         );
         res.json(rows);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Assignment mark get by student error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -247,10 +246,11 @@ exports.createAssignmentMark = async (req, res) => {
         );
         res.status(201).json({ id: result.insertId, message: "Assignment mark recorded successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Assignment mark create error:", err);
+       
         if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "This assignment number already has marks recorded for this enrollment" });
         if (err.code === "ER_NO_REFERENCED_ROW_2") return res.status(400).json({ error: "Invalid student_id or course_offering_id" });
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -301,10 +301,9 @@ exports.updateAssignmentMark = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Assignment mark update error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+           error: "Database error"
         });
     }
 };
@@ -314,8 +313,8 @@ exports.deleteAssignmentMark = async (req, res) => {
         if (result.affectedRows === 0) return res.status(404).json({ error: "Assignment mark not found" });
         res.json({ message: "Assignment mark deleted successfully" });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Assignment mark delete error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -357,10 +356,9 @@ exports.getAllExamMarks = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Exam mark get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -371,8 +369,8 @@ exports.getExamMarkById = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: "Exam mark not found" });
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Exam mark get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -384,8 +382,8 @@ exports.getExamMarksByStudent = async (req, res) => {
         );
         res.json(rows);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Exam mark get by student error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -407,10 +405,10 @@ exports.createExamMark = async (req, res) => {
         );
         res.status(201).json({ id: result.insertId, message: "Exam mark recorded successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Exam mark create error:", err);
         if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "This exam type already has marks recorded for this enrollment" });
         if (err.code === "ER_NO_REFERENCED_ROW_2") return res.status(400).json({ error: "Invalid student_id or course_offering_id" });
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -459,10 +457,9 @@ exports.updateExamMark = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Exam mark update error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -473,7 +470,7 @@ exports.deleteExamMark = async (req, res) => {
         if (result.affectedRows === 0) return res.status(404).json({ error: "Exam mark not found" });
         res.json({ message: "Exam mark deleted successfully" });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Exam mark delete error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };

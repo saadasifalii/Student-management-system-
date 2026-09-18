@@ -6,7 +6,7 @@ exports.getAllDepartments = async (req, res) => {
         const [rows] = await db.query("SELECT * FROM departments");
         res.json(rows);
     } catch (err) {
-        console.error(err);
+        console.error("Department get all error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -23,7 +23,7 @@ exports.getDepartmentById = async (req, res) => {
         }
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
+        console.error("Department get by ID error:", err);
         res.status(500).json({ error: "Database error" });
     }
 };
@@ -44,7 +44,7 @@ exports.createDepartment = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Department created successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Department create error:", err);
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({ error: "Department code already exists" });
         }
@@ -97,7 +97,7 @@ exports.updateDepartment = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Department update error:", err);
 
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
@@ -123,7 +123,7 @@ exports.deleteDepartment = async (req, res) => {
         }
         res.json({ message: "Department deleted successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Department delete error:", err);
         // RESTRICT — blocks delete if degree_programs, teachers, students, or courses still reference it
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
             return res.status(409).json({ error: "Cannot delete department — still in use by programs, courses, teachers, or students" });

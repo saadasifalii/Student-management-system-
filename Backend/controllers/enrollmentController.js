@@ -38,10 +38,9 @@ exports.getAllEnrollments = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Enrollment get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -63,10 +62,10 @@ exports.getEnrollmentById = async (req, res) => {
         res.json(rows[0]);
 
     } catch (err) {
-        console.error(err);
+        console.error("Enrollment get by ID error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
+          
         });
     }
 };
@@ -105,7 +104,7 @@ exports.createEnrollment = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Enrollment create error:", err);
 
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
@@ -120,8 +119,8 @@ exports.createEnrollment = async (req, res) => {
         }
 
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
+         
         });
     }
 };
@@ -153,10 +152,9 @@ exports.updateEnrollment = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Enrollment update error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -180,10 +178,9 @@ exports.deleteEnrollment = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Enrollment delete error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };

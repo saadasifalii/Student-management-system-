@@ -40,10 +40,9 @@ exports.getAllAttendance = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Attendance get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -60,8 +59,8 @@ exports.getAttendanceById = async (req, res) => {
         }
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Attendance get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -109,10 +108,9 @@ exports.getAttendanceByStudent = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Attendance get by student error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -137,8 +135,8 @@ exports.getAttendanceSummaryByStudent = async (req, res) => {
 
         res.json({ ...summary, percentage });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Attendance summary error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -159,14 +157,14 @@ exports.createAttendance = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Attendance recorded successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Attendance create error:", err);
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({ error: "Attendance already recorded for this student/offering on this date" });
         }
         if (err.code === "ER_NO_REFERENCED_ROW_2") {
             return res.status(400).json({ error: "Invalid student_id or course_offering_id" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -214,10 +212,9 @@ exports.updateAttendance = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Attendance update error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -234,7 +231,7 @@ exports.deleteAttendance = async (req, res) => {
         }
         res.json({ message: "Attendance deleted successfully" });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Attendance delete error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };

@@ -40,10 +40,9 @@ exports.getAllDocuments = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Document get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -55,8 +54,8 @@ exports.getDocumentById = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: "Document not found" });
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Document get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -100,10 +99,9 @@ exports.getDocumentsByStudent = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Document get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -148,9 +146,9 @@ exports.createDocument = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Document uploaded successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Document create error:", err);
         if (err.code === "ER_NO_REFERENCED_ROW_2") return res.status(400).json({ error: "Invalid student_id" });
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -201,10 +199,9 @@ exports.updateDocument = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Document update error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -216,7 +213,7 @@ exports.deleteDocument = async (req, res) => {
         if (result.affectedRows === 0) return res.status(404).json({ error: "Document not found" });
         res.json({ message: "Document deleted successfully" });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Document delete error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };

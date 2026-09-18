@@ -40,10 +40,9 @@ exports.getAllCourseOfferings = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Course offering get all error:", err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
         });
     }
 };
@@ -60,8 +59,8 @@ exports.getCourseOfferingById = async (req, res) => {
         }
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Course offering get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -86,14 +85,14 @@ exports.createCourseOffering = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Course offering created successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Course offering create error:", err);
         if (err.code === "ER_NO_REFERENCED_ROW_2") {
             return res.status(400).json({ error: "Invalid course_id, teacher_id, section_id, or semester_id" });
         }
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({ error: "This course offering already exists" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -142,7 +141,7 @@ exports.updateCourseOffering = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Course offering update error:", err);
 
         if (err.code === "ER_NO_REFERENCED_ROW_2") {
             return res.status(400).json({
@@ -151,8 +150,8 @@ exports.updateCourseOffering = async (req, res) => {
         }
 
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
+         
         });
     }
 };
@@ -168,10 +167,10 @@ exports.deleteCourseOffering = async (req, res) => {
         }
         res.json({ message: "Course offering deleted successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Course offering delete error:", err);
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
             return res.status(409).json({ error: "Cannot delete — students are enrolled in this offering" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };

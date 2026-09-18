@@ -6,8 +6,8 @@ exports.getAllDegreePrograms = async (req, res) => {
         const [rows] = await db.query("SELECT * FROM degree_programs");
         res.json(rows);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Degree program get all error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -23,8 +23,8 @@ exports.getDegreeProgramById = async (req, res) => {
         }
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error("Degree program get by ID error:", err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -49,14 +49,14 @@ exports.createDegreeProgram = async (req, res) => {
 
         res.status(201).json({ id: result.insertId, message: "Degree program created successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Degree program create error:", err);
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({ error: "Program code already exists" });
         }
         if (err.code === "ER_NO_REFERENCED_ROW_2") {
             return res.status(400).json({ error: "Invalid department_id — department does not exist" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -108,7 +108,7 @@ exports.updateDegreeProgram = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Degree program update error:", err);
 
         if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
@@ -117,8 +117,8 @@ exports.updateDegreeProgram = async (req, res) => {
         }
 
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
+           
         });
     }
 };
@@ -135,10 +135,10 @@ exports.deleteDegreeProgram = async (req, res) => {
         }
         res.json({ message: "Degree program deleted successfully" });
     } catch (err) {
-        console.error(err);
+        console.error("Degree program delete error:", err);
         if (err.code === "ER_ROW_IS_REFERENCED_2") {
             return res.status(409).json({ error: "Cannot delete — still in use by students or sections" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
