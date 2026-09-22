@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axiosConfig';
+import { extractPaginated } from '../utils/listHelper';
 
 function TeacherForm({ teacher, onClose, onSaved }) {
     const isEditing = !!teacher;
@@ -35,7 +36,8 @@ function TeacherForm({ teacher, onClose, onSaved }) {
                     '/users?role=teacher&available=true'
                 );
 
-                setAvailableUsers(response.data || []);
+                const { list } = extractPaginated(response.data);
+                setAvailableUsers(list);
 
             } catch (err) {
                 console.error(
