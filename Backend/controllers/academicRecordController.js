@@ -200,6 +200,11 @@ exports.deleteSemesterResult = async (req, res) => {
 // GET /api/cgpa
 exports.getAllCgpa = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+        const offset = (safePage - 1) * safeLimit;
         const [rows] = await db.query(`
             SELECT
                 cgpa.id,
@@ -216,9 +221,21 @@ exports.getAllCgpa = async (req, res) => {
             INNER JOIN students AS s
                 ON s.id = cgpa.student_id
             ORDER BY cgpa.id DESC
-        `);
+            LIMIT ? OFFSET ?
+        `, [safeLimit, offset]);
 
-        res.json(rows);
+        const [countResult] = await db.query("SELECT COUNT(*) AS total FROM student_cgpa");
+        const totalCgpa = countResult[0].total;
+
+        res.json({
+            cgpa: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalCgpa,
+                totalPages: Math.ceil(totalCgpa / safeLimit)
+            }
+        });
 
     } catch (err) {
         console.error("CGPA get all error:", err);

@@ -59,11 +59,21 @@ exports.getQuizMarkById = async (req, res) => {
 
 exports.getQuizMarksByStudent = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+        const offset = (safePage - 1) * safeLimit;
         const [rows] = await db.query(
-            "SELECT * FROM quiz_marks WHERE student_id = ?",
+            "SELECT * FROM quiz_marks WHERE student_id = ? ORDER BY id DESC LIMIT ? OFFSET ?",
+            [req.params.studentId, safeLimit, offset]
+        );
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) AS total FROM quiz_marks WHERE student_id = ?",
             [req.params.studentId]
         );
-        res.json(rows);
+        const totalQuizMarks = countResult[0].total;
+        res.json({ quizMarks: rows, pagination: { currentPage: safePage, limit: safeLimit, totalQuizMarks, totalPages: Math.ceil(totalQuizMarks / safeLimit) } });
     } catch (err) {
         console.error("Quiz mark get by student error:", err);
         res.status(500).json({ error: "Database error"});
@@ -216,11 +226,21 @@ exports.getAssignmentMarkById = async (req, res) => {
 
 exports.getAssignmentMarksByStudent = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+        const offset = (safePage - 1) * safeLimit;
         const [rows] = await db.query(
-            "SELECT * FROM assignment_marks WHERE student_id = ?",
+            "SELECT * FROM assignment_marks WHERE student_id = ? ORDER BY id DESC LIMIT ? OFFSET ?",
+            [req.params.studentId, safeLimit, offset]
+        );
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) AS total FROM assignment_marks WHERE student_id = ?",
             [req.params.studentId]
         );
-        res.json(rows);
+        const totalAssignmentMarks = countResult[0].total;
+        res.json({ assignmentMarks: rows, pagination: { currentPage: safePage, limit: safeLimit, totalAssignmentMarks, totalPages: Math.ceil(totalAssignmentMarks / safeLimit) } });
     } catch (err) {
         console.error("Assignment mark get by student error:", err);
         res.status(500).json({ error: "Database error" });
@@ -376,11 +396,21 @@ exports.getExamMarkById = async (req, res) => {
 
 exports.getExamMarksByStudent = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+        const offset = (safePage - 1) * safeLimit;
         const [rows] = await db.query(
-            "SELECT * FROM exam_marks WHERE student_id = ?",
+            "SELECT * FROM exam_marks WHERE student_id = ? ORDER BY id DESC LIMIT ? OFFSET ?",
+            [req.params.studentId, safeLimit, offset]
+        );
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) AS total FROM exam_marks WHERE student_id = ?",
             [req.params.studentId]
         );
-        res.json(rows);
+        const totalExamMarks = countResult[0].total;
+        res.json({ examMarks: rows, pagination: { currentPage: safePage, limit: safeLimit, totalExamMarks, totalPages: Math.ceil(totalExamMarks / safeLimit) } });
     } catch (err) {
         console.error("Exam mark get by student error:", err);
         res.status(500).json({ error: "Database error" });
