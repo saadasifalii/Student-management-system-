@@ -3,112 +3,52 @@ import api from '../api/axiosConfig';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import CourseOfferingForm from './CourseOfferingForm';
+import { extractList } from '../utils/listHelper';
 
 function CourseOfferings() {
     const { user } = useAuth();
+    const isAdmin = user?.role === 'admin';
 
     const [offerings, setOfferings] = useState([]);
     const [courses, setCourses] = useState([]);
     const [teachers, setTeachers] = useState([]);
     const [sections, setSections] = useState([]);
     const [semesters, setSemesters] = useState([]);
-
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-
     const [showForm, setShowForm] = useState(false);
     const [editingOffering, setEditingOffering] = useState(null);
 
-    const isAdmin = user?.role === 'admin';
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const pageLimit = 10;
 
-    // Convert API response into an array
-    const getArray = (response, key) => {
-        if (Array.isArray(response?.data)) {
-            return response.data;
-        }
-
-        if (key && Array.isArray(response?.data?.[key])) {
-            return response.data[key];
-        }
-
-        if (Array.isArray(response?.data?.data)) {
-            return response.data.data;
-        }
-
-        return [];
-    };
-
-    // Fetch all required data
-    const fetchData = async () => {
+    const fetchData = async (page = 1) => {
         setLoading(true);
-        setError('');
-
         try {
-            const [
-                offeringsRes,
-                coursesRes,
-                teachersRes,
-                sectionsRes,
-                semestersRes
-            ] = await Promise.all([
-                api.get('/course-offerings'),
-                api.get('/courses'),
-                api.get('/teachers'),
-                api.get('/sections'),
-                api.get('/semesters'),
+            const [offeringsRes, coursesRes, teachersRes, sectionsRes, semestersRes] = await Promise.all([
+                api.get(`/course-offerings?page=${page}&limit=${pageLimit}`),
+                api.get('/courses?limit=1000'),
+                api.get('/teachers?limit=1000'),
+                api.get('/sections?limit=1000'),
+                api.get('/semesters?limit=1000'),
             ]);
 
-            const offeringsData = getArray(
-                offeringsRes,
-                'offerings'
-            );
+            setOfferings(offeringsRes.data.courseOfferings || extractList(offeringsRes.data));
+            if (offeringsRes.data.pagination) {
+                setCurrentPage(offeringsRes.data.pagination.currentPage);
+                setTotalPages(offeringsRes.data.pagination.totalPages);
+                setTotalCount(offeringsRes.data.pagination.totalCourseOfferings);
+            }
 
-            const coursesData = getArray(
-                coursesRes,
-                'courses'
-            );
-
-            const teachersData = getArray(
-                teachersRes,
-                'teachers'
-            );
-
-            const sectionsData = getArray(
-                sectionsRes,
-                'sections'
-            );
-
-            const semestersData = getArray(
-                semestersRes,
-                'semesters'
-            );
-
-            setOfferings(offeringsData);
-            setCourses(coursesData);
-            setTeachers(teachersData);
-            setSections(sectionsData);
-            setSemesters(semestersData);
-
+            setCourses(extractList(coursesRes.data));
+            setTeachers(extractList(teachersRes.data));
+            setSections(extractList(sectionsRes.data));
+            setSemesters(extractList(semestersRes.data));
         } catch (err) {
-            console.error(
-                'Failed to load course offerings:',
-                err
-            );
-
-            console.error(
-                'Server response:',
-                err.response?.data
-            );
-
-            setOfferings([]);
-            setCourses([]);
-            setTeachers([]);
-            setSections([]);
-            setSemesters([]);
-
-            setError(
-                'Failed to load course offerings.'
-            );
+            console.error(err);
+            setError('Failed to load course offerings.');
         } finally {
             setLoading(false);
         }
@@ -116,131 +56,64 @@ function CourseOfferings() {
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        fetchData(1);
     }, []);
 
-    // Get course name
-    const getCourseName = (id) => {
-        return (
-            courses.find((c) => c.id === id)?.course_name ||
-            '—'
-        );
+    const goToPage = (page) => {
+        if (page < 1 || page > totalPages) return;
+        fetchData(page);
     };
 
-    // Get teacher name
+    const getCourseName = (id) => courses.find((c) => c.id === id)?.course_name || '—';
     const getTeacherName = (id) => {
-        const teacher = teachers.find(
-            (t) => t.id === id
-        );
-
-        return teacher
-            ? `${teacher.first_name} ${teacher.last_name}`
-            : '—';
+        const t = teachers.find((t) => t.id === id);
+        return t ? `${t.first_name} ${t.last_name}` : '—';
     };
+    const getSectionName = (id) => sections.find((s) => s.id === id)?.name || '—';
+    const getSemesterName = (id) => semesters.find((s) => s.id === id)?.name || '—';
 
-    // Get section name
-    const getSectionName = (id) => {
-        return (
-            sections.find((s) => s.id === id)?.name ||
-            '—'
-        );
-    };
-
-    // Get semester name
-    const getSemesterName = (id) => {
-        return (
-            semesters.find((s) => s.id === id)?.name ||
-            '—'
-        );
-    };
-
-    // Add course offering
     const handleAddClick = () => {
         setEditingOffering(null);
         setShowForm(true);
     };
 
-    // Edit course offering
     const handleEditClick = (offering) => {
         setEditingOffering(offering);
         setShowForm(true);
     };
 
-    // Delete course offering
     const handleDelete = async (id) => {
-        if (
-            !window.confirm(
-                'Are you sure you want to delete this course offering?'
-            )
-        ) {
-            return;
-        }
-
+        if (!window.confirm('Are you sure you want to delete this course offering?')) return;
         try {
-            await api.delete(
-                `/course-offerings/${id}`
-            );
-
-            fetchData();
-
+            await api.delete(`/course-offerings/${id}`);
+            fetchData(currentPage);
         } catch (err) {
-            console.error(
-                'Delete course offering error:',
-                err
-            );
-
-            alert(
-                err.response?.data?.error ||
-                'Failed to delete course offering.'
-            );
+            alert(err.response?.data?.error || 'Failed to delete course offering.');
         }
     };
 
-    // After saving
     const handleSaved = () => {
         setShowForm(false);
-        fetchData();
+        fetchData(currentPage);
     };
 
     return (
         <Layout>
-
-            {/* HEADER */}
             <div className="d-flex justify-content-between align-items-center mb-3">
-
                 <h2>Course Offerings</h2>
-
                 {isAdmin && (
-                    <button
-                        className="btn btn-primary"
-                        onClick={handleAddClick}
-                    >
+                    <button className="btn btn-primary" onClick={handleAddClick}>
                         + Add Course Offering
                     </button>
                 )}
-
             </div>
 
-            {/* LOADING */}
-            {loading && (
-                <p>Loading...</p>
-            )}
+            {loading && <p>Loading...</p>}
+            {error && <div className="alert alert-danger">{error}</div>}
 
-            {/* ERROR */}
-            {error && (
-                <div className="alert alert-danger">
-                    {error}
-                </div>
-            )}
-
-            {/* TABLE */}
-            {!loading &&
-                !error &&
-                offerings.length > 0 && (
-
+            {!loading && !error && (
+                <>
                     <table className="table table-striped table-hover">
-
                         <thead>
                             <tr>
                                 <th>Course</th>
@@ -249,105 +122,70 @@ function CourseOfferings() {
                                 <th>Semester</th>
                                 <th>Room</th>
                                 <th>Schedule</th>
-
-                                {isAdmin && (
-                                    <th>Actions</th>
-                                )}
+                                {isAdmin && <th>Actions</th>}
                             </tr>
                         </thead>
-
                         <tbody>
-
                             {offerings.map((o) => (
                                 <tr key={o.id}>
-
-                                    <td>
-                                        {getCourseName(
-                                            o.course_id
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        {getTeacherName(
-                                            o.teacher_id
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        {getSectionName(
-                                            o.section_id
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        {getSemesterName(
-                                            o.semester_id
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        {o.room}
-                                    </td>
-
-                                    <td>
-                                        {o.schedule}
-                                    </td>
-
+                                    <td>{getCourseName(o.course_id)}</td>
+                                    <td>{getTeacherName(o.teacher_id)}</td>
+                                    <td>{getSectionName(o.section_id)}</td>
+                                    <td>{getSemesterName(o.semester_id)}</td>
+                                    <td>{o.room}</td>
+                                    <td>{o.schedule}</td>
                                     {isAdmin && (
                                         <td>
-
-                                            <button
-                                                className="btn btn-sm btn-outline-primary me-2"
-                                                onClick={() =>
-                                                    handleEditClick(o)
-                                                }
-                                            >
+                                            <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEditClick(o)}>
                                                 Edit
                                             </button>
-
-                                            <button
-                                                className="btn btn-sm btn-outline-danger"
-                                                onClick={() =>
-                                                    handleDelete(
-                                                        o.id
-                                                    )
-                                                }
-                                            >
+                                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(o.id)}>
                                                 Delete
                                             </button>
-
                                         </td>
                                     )}
-
                                 </tr>
                             ))}
-
                         </tbody>
-
                     </table>
-                )}
 
-            {/* NO DATA */}
-            {!loading &&
-                !error &&
-                offerings.length === 0 && (
+                    {offerings.length === 0 && (
+                        <p className="text-muted">No course offerings found.</p>
+                    )}
 
-                    <p className="text-muted">
-                        No course offerings found.
-                    </p>
-                )}
+                    {totalPages > 1 && (
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            <span className="text-muted small">
+                                Showing page {currentPage} of {totalPages} ({totalCount} total)
+                            </span>
+                            <div className="d-flex gap-2">
+                                <button
+                                    className="btn btn-outline-secondary btn-sm"
+                                    onClick={() => goToPage(currentPage - 1)}
+                                    disabled={currentPage <= 1}
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    className="btn btn-outline-secondary btn-sm"
+                                    onClick={() => goToPage(currentPage + 1)}
+                                    disabled={currentPage >= totalPages}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
 
-            {/* FORM */}
             {showForm && (
                 <CourseOfferingForm
                     offering={editingOffering}
-                    onClose={() =>
-                        setShowForm(false)
-                    }
+                    onClose={() => setShowForm(false)}
                     onSaved={handleSaved}
                 />
             )}
-
         </Layout>
     );
 }

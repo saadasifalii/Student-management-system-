@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axiosConfig';
+// eslint-disable-next-line no-unused-vars
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
+import { extractList } from '../utils/listHelper';
 
 const MARK_TYPES = {
     quiz: { label: 'Quizzes', endpoint: '/quiz-marks', numberField: 'quiz_number', numberLabel: 'Quiz #' },
@@ -10,10 +12,7 @@ const MARK_TYPES = {
 };
 
 function MyGrades() {
-    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('quiz');
-    // eslint-disable-next-line no-unused-vars
-    const [studentId, setStudentId] = useState(null);
     const [offerings, setOfferings] = useState([]);
     const [courses, setCourses] = useState([]);
     const [marksByType, setMarksByType] = useState({ quiz: [], assignment: [], exam: [] });
@@ -23,40 +22,33 @@ function MyGrades() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const studentsRes = await api.get('/students');
-                const myStudent = studentsRes.data.find((s) => s.user_id === user.id);
-
-                if (!myStudent) {
-                    setError('No student record linked to this account.');
-                    setLoading(false);
-                    return;
-                }
-                setStudentId(myStudent.id);
+                const myStudentRes = await api.get('/students/me');
+                const myStudent = myStudentRes.data;
 
                 const [quizRes, assignmentRes, examRes, offeringsRes, coursesRes] = await Promise.all([
                     api.get(`/quiz-marks/student/${myStudent.id}`),
                     api.get(`/assignment-marks/student/${myStudent.id}`),
                     api.get(`/exam-marks/student/${myStudent.id}`),
-                    api.get('/course-offerings'),
-                    api.get('/courses'),
+                    api.get('/course-offerings?limit=1000'),
+                    api.get('/courses?limit=1000'),
                 ]);
 
                 setMarksByType({
-                    quiz: quizRes.data,
-                    assignment: assignmentRes.data,
-                    exam: examRes.data,
+                    quiz: extractList(quizRes.data),
+                    assignment: extractList(assignmentRes.data),
+                    exam: extractList(examRes.data),
                 });
-                setOfferings(offeringsRes.data);
-                setCourses(coursesRes.data);
+                setOfferings(extractList(offeringsRes.data.courseOfferings || offeringsRes.data));
+                setCourses(extractList(coursesRes.data));
             } catch (err) {
                 console.error(err);
-                setError('Failed to load your grades.');
+                setError(err.response?.data?.error || 'Failed to load your grades.');
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, [user]);
+    }, []);
 
     const getCourseLabel = (offeringId) => {
         const offering = offerings.find((o) => o.id === offeringId);

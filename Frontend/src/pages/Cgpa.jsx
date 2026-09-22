@@ -26,6 +26,7 @@ function Cgpa() {
     const isAdmin = user?.role === 'admin';
 
     const [cgpaList, setCgpaList] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [students, setStudents] = useState([]);
 
     const [loading, setLoading] = useState(true);
@@ -44,46 +45,59 @@ function Cgpa() {
     const [formError, setFormError] = useState('');
 
     // Fetch CGPA records and students
-    const fetchData = async () => {
-        setLoading(true);
-        setError('');
+ // Fetch CGPA records and students
+const fetchData = async () => {
+    setLoading(true);
+    setError('');
 
-        try {
-            const [cgpaRes, studentsRes] =
-                await Promise.all([
-                    api.get('/cgpa'),
-                    api.get('/students'),
-                ]);
+    try {
+        const cgpaRes = await api.get('/cgpa');
 
-            setCgpaList(
-                getArray(cgpaRes, 'cgpa')
-            );
+        console.log('CGPA RESPONSE:', cgpaRes.data);
 
-            setStudents(
-                getArray(studentsRes, 'students')
-            );
+        const cgpaData = Array.isArray(cgpaRes.data)
+            ? cgpaRes.data
+            : getArray(cgpaRes, 'cgpa');
 
-        } catch (err) {
-            console.error(
-                'Error loading CGPA records:',
-                err
-            );
+        setCgpaList(cgpaData);
 
-            setError(
-                err.response?.data?.error ||
-                err.response?.data?.message ||
-                'Failed to load CGPA records.'
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+        console.log('FINAL CGPA DATA:', cgpaData);
 
-    // Initial load
-    useEffect(() => {
+    } catch (err) {
+        console.error(
+            'ERROR LOADING CGPA RECORDS:',
+            err
+        );
+
+        console.error(
+            'STATUS:',
+            err.response?.status
+        );
+
+        console.error(
+            'SERVER RESPONSE:',
+            err.response?.data
+        );
+
+        setError(
+            err.response?.data?.error ||
+            err.response?.data?.message ||
+            'Failed to load CGPA records.'
+        );
+
+    } finally {
+        setLoading(false);
+
+        console.log('CGPA loading finished');
+    }
+};
+useEffect(() => {
+    if (user) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchData();
-    }, []);
+    }
+
+}, [user]);
 
     // Get student name
     const getStudentName = (id) => {
