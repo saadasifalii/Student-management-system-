@@ -11,66 +11,185 @@ const SALT_ROUNDS = 10;
 // /api/users?role=teacher
 // /api/users?role=student&available=true
 // /api/users?role=teacher&available=true
+// GET /api/users
+// Optional:
+// /api/users?page=1&limit=10
+// /api/users?role=student&page=1&limit=10
+// /api/users?role=teacher&page=1&limit=10
+// /api/users?role=student&available=true&page=1&limit=10
+// /api/users?role=teacher&available=true&page=1&limit=10
 
 exports.getAllUsers = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const safePage = page < 1 ? 1 : page;
+        const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
+
+        const offset = (safePage - 1) * safeLimit;
+
         const { role, available } = req.query;
 
-        let query = `
-            SELECT 
-                u.id,
-                u.name,
-                u.email,
-                u.role,
-                u.status,
-                u.created_at,
-                u.updated_at
-            FROM users u
-        `;
+        let rows;
+        let countResult;
 
-        const params = [];
-        const conditions = [];
-
-        // Filter by role
-        if (role) {
-            if (!["admin", "student", "teacher"].includes(role)) {
-                return res.status(400).json({
-                    error: "Invalid role"
-                });
-            }
-
-            conditions.push("u.role = ?");
-            params.push(role);
+        // Validate role
+        if (
+            role &&
+            !["admin", "student", "teacher"].includes(role)
+        ) {
+            return res.status(400).json({
+                error: "Invalid role"
+            });
         }
 
-        // Only users who are not already linked
-        if (available === "true" && role === "student") {
-            query += `
-                LEFT JOIN students s
+        // =====================================================
+        // ADMIN → SEE ALL USERS
+        // =====================================================
+        if (!role && !available) {
+            [rows] = await db.query(
+                `SELECT 
+                    u.id,
+                    u.name,
+                    u.email,
+                    u.role,
+                    u.status,
+                    u.created_at,
+                    u.updated_at
+                 FROM users u
+                 ORDER BY u.id DESC
+                 LIMIT ? OFFSET ?`,
+                [safeLimit, offset]
+            );
+
+            [countResult] = await db.query(
+                `SELECT COUNT(*) AS total
+                 FROM users`
+            );
+        }
+
+        // =====================================================
+        // FILTER BY ROLE
+        // =====================================================
+        else if (role && available !== "true") {
+            [rows] = await db.query(
+                `SELECT 
+                    u.id,
+                    u.name,
+                    u.email,
+                    u.role,
+                    u.status,
+                    u.created_at,
+                    u.updated_at
+                 FROM users u
+                 WHERE u.role = ?
+                 ORDER BY u.id DESC
+                 LIMIT ? OFFSET ?`,
+                [role, safeLimit, offset]
+            );
+
+            [countResult] = await db.query(
+                `SELECT COUNT(*) AS total
+                 FROM users
+                 WHERE role = ?`,
+                [role]
+            );
+        }
+
+        // =====================================================
+        // AVAILABLE STUDENTS
+        // Users with student role who are NOT linked
+        // to a student record
+        // =====================================================
+        else if (role === "student" && available === "true") {
+            [rows] = await db.query(
+                `SELECT 
+                    u.id,
+                    u.name,
+                    u.email,
+                    u.role,
+                    u.status,
+                    u.created_at,
+                    u.updated_at
+                 FROM users u
+                 LEFT JOIN students s
                     ON s.user_id = u.id
-            `;
+                 WHERE u.role = ?
+                 AND s.id IS NULL
+                 ORDER BY u.id DESC
+                 LIMIT ? OFFSET ?`,
+                [role, safeLimit, offset]
+            );
 
-            conditions.push("s.id IS NULL");
+            [countResult] = await db.query(
+                `SELECT COUNT(*) AS total
+                 FROM users u
+                 LEFT JOIN students s
+                    ON s.user_id = u.id
+                 WHERE u.role = ?
+                 AND s.id IS NULL`,
+                [role]
+            );
         }
 
-        if (available === "true" && role === "teacher") {
-            query += `
-                LEFT JOIN teachers t
+        // =====================================================
+        // AVAILABLE TEACHERS
+        // Users with teacher role who are NOT linked
+        // to a teacher record
+        // =====================================================
+        else if (role === "teacher" && available === "true") {
+            [rows] = await db.query(
+                `SELECT 
+                    u.id,
+                    u.name,
+                    u.email,
+                    u.role,
+                    u.status,
+                    u.created_at,
+                    u.updated_at
+                 FROM users u
+                 LEFT JOIN teachers t
                     ON t.user_id = u.id
-            `;
+                 WHERE u.role = ?
+                 AND t.id IS NULL
+                 ORDER BY u.id DESC
+                 LIMIT ? OFFSET ?`,
+                [role, safeLimit, offset]
+            );
 
-            conditions.push("t.id IS NULL");
+            [countResult] = await db.query(
+                `SELECT COUNT(*) AS total
+                 FROM users u
+                 LEFT JOIN teachers t
+                    ON t.user_id = u.id
+                 WHERE u.role = ?
+                 AND t.id IS NULL`,
+                [role]
+            );
         }
 
-        if (conditions.length > 0) {
-            query += ` WHERE ${conditions.join(" AND ")}`;
+        // =====================================================
+        // FALLBACK
+        // =====================================================
+        else {
+            return res.status(400).json({
+                error: "Invalid user filter"
+            });
         }
 
-        query += ` ORDER BY u.id DESC`;
+        const totalUsers = countResult[0].total;
+        const totalPages = Math.ceil(totalUsers / safeLimit);
 
-        const [rows] = await db.query(query, params);
-
-        res.json(rows);
+        res.json({
+            users: rows,
+            pagination: {
+                currentPage: safePage,
+                limit: safeLimit,
+                totalUsers,
+                totalPages
+            }
+        });
 
     } catch (err) {
         console.error("User get all error:", err);
