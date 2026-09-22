@@ -3,6 +3,7 @@ import api from '../api/axiosConfig';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import EnrollmentForm from './EnrollmentForm';
+import { extractPaginated } from '../utils/listHelper';
 
 function Enrollments() {
     const { user } = useAuth();
@@ -17,6 +18,10 @@ function Enrollments() {
 
     const [showForm, setShowForm] = useState(false);
     const [editingEnrollment, setEditingEnrollment] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const pageLimit = 10;
 
     const isAdmin = user?.role === 'admin';
 
@@ -37,7 +42,7 @@ function Enrollments() {
         return [];
     };
 
-    const fetchData = async () => {
+    const fetchData = async (page = 1) => {
         setLoading(true);
         setError('');
 
@@ -48,16 +53,13 @@ function Enrollments() {
                 offeringsRes,
                 coursesRes
             ] = await Promise.all([
-                api.get('/enrollments'),
-                api.get('/students'),
-                api.get('/course-offerings'),
-                api.get('/courses'),
+                api.get(`/enrollments?page=${page}&limit=${pageLimit}`),
+                api.get('/students?limit=1000'),
+                api.get('/course-offerings?limit=1000'),
+                api.get('/courses?limit=1000'),
             ]);
 
-            const enrollmentsData = getArray(
-                enrollmentsRes,
-                'enrollments'
-            );
+            const { list: enrollmentsData, pagination } = extractPaginated(enrollmentsRes.data);
 
             const studentsData = getArray(
                 studentsRes,
@@ -75,6 +77,11 @@ function Enrollments() {
             );
 
             setEnrollments(enrollmentsData);
+            if (pagination) {
+                setCurrentPage(pagination.currentPage || page);
+                setTotalPages(pagination.totalPages || 1);
+                setTotalCount(pagination.totalEnrollments || 0);
+            }
             setStudents(studentsData);
             setOfferings(offeringsData);
             setCourses(coursesData);
@@ -106,6 +113,11 @@ function Enrollments() {
         fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const goToPage = (page) => {
+        if (page < 1 || page > totalPages) return;
+        fetchData(page);
+    };
 
     // Get student name
     const getStudentName = (id) => {
@@ -161,7 +173,7 @@ function Enrollments() {
                 `/enrollments/${id}`
             );
 
-            fetchData();
+            fetchData(currentPage);
 
         } catch (err) {
             console.error(
@@ -178,7 +190,7 @@ function Enrollments() {
 
     const handleSaved = () => {
         setShowForm(false);
-        fetchData();
+        fetchData(currentPage);
     };
 
     return (
@@ -216,7 +228,7 @@ function Enrollments() {
             {!loading &&
                 !error &&
                 enrollments.length > 0 && (
-
+                    <>
                     <table className="table table-striped table-hover">
 
                         <thead>
@@ -302,6 +314,16 @@ function Enrollments() {
                         </tbody>
 
                     </table>
+                    {totalPages > 1 && (
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            <span className="text-muted small">Showing page {currentPage} of {totalPages} ({totalCount} total)</span>
+                            <div className="d-flex gap-2">
+                                <button className="btn btn-outline-secondary btn-sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>Previous</button>
+                                <button className="btn btn-outline-secondary btn-sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}>Next</button>
+                            </div>
+                        </div>
+                    )}
+                    </>
                 )}
 
             {/* NO ENROLLMENTS */}

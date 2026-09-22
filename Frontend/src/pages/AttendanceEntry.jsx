@@ -42,8 +42,8 @@ function AttendanceEntry() {
         const fetchOptions = async () => {
             try {
                 const [offeringsRes, coursesRes] = await Promise.all([
-                    api.get('/course-offerings'),
-                    api.get('/courses'),
+                    api.get('/course-offerings?limit=1000'),
+                    api.get('/courses?limit=1000'),
                 ]);
 
                 let offeringsData = getArray(
@@ -131,9 +131,9 @@ function AttendanceEntry() {
                 enrollmentsRes,
                 attendanceRes
             ] = await Promise.all([
-                api.get('/students'),
-                api.get('/enrollments'),
-                api.get('/attendance'),
+                api.get('/students?limit=1000'),
+                api.get('/enrollments?limit=1000'),
+                api.get('/attendance?limit=1000'),
             ]);
 
             const students = getArray(

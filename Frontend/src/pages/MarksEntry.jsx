@@ -68,8 +68,8 @@ function MarksEntry() {
         const fetchOptions = async () => {
             try {
                 const [offeringsRes, coursesRes] = await Promise.all([
-                    api.get('/course-offerings'),
-                    api.get('/courses'),
+                    api.get('/course-offerings?limit=1000'),
+                    api.get('/courses?limit=1000'),
                 ]);
 
                 let myOfferings = getArray(offeringsRes, 'offerings');
@@ -145,8 +145,8 @@ function MarksEntry() {
         try {
             const [studentsRes, enrollmentsRes, marksRes] =
                 await Promise.all([
-                    api.get('/students'),
-                    api.get('/enrollments'),
+                    api.get('/students?limit=1000'),
+                    api.get('/enrollments?limit=1000'),
                     api.get(config.endpoint),
                 ]);
 

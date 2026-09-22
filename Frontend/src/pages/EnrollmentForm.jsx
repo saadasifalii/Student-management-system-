@@ -45,9 +45,9 @@ function EnrollmentForm({ enrollment, onClose, onSaved }) {
                     offeringsRes,
                     coursesRes
                 ] = await Promise.all([
-                    api.get('/students'),
-                    api.get('/course-offerings'),
-                    api.get('/courses'),
+                    api.get('/students?limit=1000'),
+                    api.get('/course-offerings?limit=1000'),
+                    api.get('/courses?limit=1000'),
                 ]);
 
                 setStudents(

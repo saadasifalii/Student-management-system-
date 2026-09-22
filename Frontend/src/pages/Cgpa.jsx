@@ -43,15 +43,18 @@ function Cgpa() {
 
     const [saving, setSaving] = useState(false);
     const [formError, setFormError] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const pageLimit = 10;
 
     // Fetch CGPA records and students
- // Fetch CGPA records and students
-const fetchData = async () => {
+const fetchData = async (page = 1) => {
     setLoading(true);
     setError('');
 
     try {
-        const cgpaRes = await api.get('/cgpa');
+        const cgpaRes = await api.get(`/cgpa?page=${page}&limit=${pageLimit}`);
 
         console.log('CGPA RESPONSE:', cgpaRes.data);
 
@@ -60,6 +63,11 @@ const fetchData = async () => {
             : getArray(cgpaRes, 'cgpa');
 
         setCgpaList(cgpaData);
+        if (cgpaRes.data.pagination) {
+            setCurrentPage(cgpaRes.data.pagination.currentPage);
+            setTotalPages(cgpaRes.data.pagination.totalPages);
+            setTotalCount(cgpaRes.data.pagination.totalCgpa);
+        }
 
         console.log('FINAL CGPA DATA:', cgpaData);
 
@@ -99,12 +107,19 @@ useEffect(() => {
 
 }, [user]);
 
-    // Get student name
-    const getStudentName = (id) => {
-        const student = students.find(
-            (s) => s.id === id
-        );
+    const goToPage = (page) => {
+        if (page < 1 || page > totalPages) return;
+        fetchData(page);
+    };
 
+    // CGPA records already include the joined student details.
+    const getStudentName = (record) => {
+        if (record.first_name || record.last_name) {
+            return `${record.first_name || ''} ${record.last_name || ''}`.trim() +
+                (record.roll_number ? ` (${record.roll_number})` : '');
+        }
+
+        const student = students.find((item) => item.id === record.student_id);
         return student
             ? `${student.first_name} ${student.last_name} (${student.roll_number})`
             : '—';
@@ -145,7 +160,7 @@ useEffect(() => {
                 cgpa: '',
             });
 
-            await fetchData();
+            await fetchData(currentPage);
 
         } catch (err) {
             console.error(
@@ -178,7 +193,7 @@ useEffect(() => {
                 `/cgpa/student/${studentId}`
             );
 
-            await fetchData();
+            await fetchData(currentPage);
 
         } catch (err) {
             console.error(
@@ -237,6 +252,7 @@ useEffect(() => {
                 !error &&
                 cgpaList.length > 0 && (
 
+                    <>
                     <div className="table-responsive">
 
                         <table className="table table-striped table-hover">
@@ -278,9 +294,7 @@ useEffect(() => {
                                         >
 
                                             <td>
-                                                {getStudentName(
-                                                    c.student_id
-                                                )}
+                                                {getStudentName(c)}
                                             </td>
 
                                             <td>
@@ -327,6 +341,16 @@ useEffect(() => {
                         </table>
 
                     </div>
+                    {totalPages > 1 && (
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            <span className="text-muted small">Showing page {currentPage} of {totalPages} ({totalCount} total)</span>
+                            <div className="d-flex gap-2">
+                                <button className="btn btn-outline-secondary btn-sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>Previous</button>
+                                <button className="btn btn-outline-secondary btn-sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}>Next</button>
+                            </div>
+                        </div>
+                    )}
+                    </>
                 )}
 
             {/* NO RECORDS */}

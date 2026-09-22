@@ -50,8 +50,8 @@ function CourseOfferingForm({ offering, onClose, onSaved }) {
                     sectionsRes,
                     semestersRes
                 ] = await Promise.all([
-                    api.get('/courses'),
-                    api.get('/teachers'),
+                    api.get('/courses?limit=1000'),
+                    api.get('/teachers?limit=1000'),
                     api.get('/sections'),
                     api.get('/semesters'),
                 ]);

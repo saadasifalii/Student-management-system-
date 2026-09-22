@@ -45,9 +45,13 @@ function SemesterResults() {
 
     const [saving, setSaving] = useState(false);
     const [formError, setFormError] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const pageLimit = 10;
 
     // Fetch semester results, students and semesters
-    const fetchData = async () => {
+    const fetchData = async (page = 1) => {
         setLoading(true);
         setError('');
 
@@ -57,17 +61,23 @@ function SemesterResults() {
                 studentsRes,
                 semestersRes,
             ] = await Promise.all([
-                api.get('/semester-results'),
-                api.get('/students'),
-                api.get('/semesters'),
+                api.get(`/semester-results?page=${page}&limit=${pageLimit}`),
+                api.get('/students?limit=1000'),
+                api.get('/semesters?limit=1000'),
             ]);
 
             setResults(
                 getArray(
                     resultsRes,
-                    'results'
+                    'semesterResults'
                 )
             );
+
+            if (resultsRes.data.pagination) {
+                setCurrentPage(resultsRes.data.pagination.currentPage);
+                setTotalPages(resultsRes.data.pagination.totalPages);
+                setTotalCount(resultsRes.data.pagination.totalSemesterResults);
+            }
 
             setStudents(
                 getArray(
@@ -103,6 +113,11 @@ function SemesterResults() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchData();
     }, []);
+
+    const goToPage = (page) => {
+        if (page < 1 || page > totalPages) return;
+        fetchData(page);
+    };
 
     // Get student name
     const getStudentName = (id) => {
@@ -161,7 +176,7 @@ function SemesterResults() {
                 academic_status: 'good',
             });
 
-            await fetchData();
+            await fetchData(currentPage);
 
         } catch (err) {
             console.error(
@@ -194,7 +209,7 @@ function SemesterResults() {
                 `/semester-results/${id}`
             );
 
-            await fetchData();
+            await fetchData(currentPage);
 
         } catch (err) {
             console.error(
@@ -252,7 +267,7 @@ function SemesterResults() {
             {!loading &&
                 !error &&
                 results.length > 0 && (
-
+                    <>
                     <div className="table-responsive">
 
                         <table className="table table-striped table-hover">
@@ -375,6 +390,16 @@ function SemesterResults() {
                         </table>
 
                     </div>
+                    {totalPages > 1 && (
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            <span className="text-muted small">Showing page {currentPage} of {totalPages} ({totalCount} total)</span>
+                            <div className="d-flex gap-2">
+                                <button className="btn btn-outline-secondary btn-sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>Previous</button>
+                                <button className="btn btn-outline-secondary btn-sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}>Next</button>
+                            </div>
+                        </div>
+                    )}
+                    </>
                 )}
 
             {/* NO RESULTS */}
