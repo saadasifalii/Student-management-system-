@@ -197,13 +197,35 @@ exports.deleteSemesterResult = async (req, res) => {
 
 /* ---------- CGPA ---------- */
 
+// GET /api/cgpa
 exports.getAllCgpa = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM student_cgpa");
+        const [rows] = await db.query(`
+            SELECT
+                cgpa.id,
+                cgpa.student_id,
+                s.first_name,
+                s.last_name,
+                s.roll_number,
+                s.registration_number,
+                cgpa.total_credit_hours,
+                cgpa.total_quality_points,
+                cgpa.cgpa,
+                cgpa.updated_at
+            FROM student_cgpa AS cgpa
+            INNER JOIN students AS s
+                ON s.id = cgpa.student_id
+            ORDER BY cgpa.id DESC
+        `);
+
         res.json(rows);
+
     } catch (err) {
         console.error("CGPA get all error:", err);
-        res.status(500).json({ error: "Database error" });
+
+        res.status(500).json({
+            error: "Database error"
+        });
     }
 };
 

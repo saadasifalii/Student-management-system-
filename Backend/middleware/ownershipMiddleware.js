@@ -36,8 +36,8 @@ exports.verifyTeacherOwnsOfferingFromBody = async (req, res, next) => {
 
         next();
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        console.error( err);
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -70,6 +70,12 @@ exports.verifyTeacherOwnsOfferingFromRecord = (tableName) => {
                 "SELECT teacher_id FROM course_offerings WHERE id = ?",
                 [recordRows[0].course_offering_id]
             );
+            if (offeringRows.length === 0) {
+    return res.status(404).json({
+        error: "Course offering not found"
+    });
+}
+
             if (offeringRows[0].teacher_id !== teacherId) {
                 return res.status(403).json({ error: "You are not assigned to this course offering" });
             }
@@ -77,7 +83,7 @@ exports.verifyTeacherOwnsOfferingFromRecord = (tableName) => {
             next();
         } catch (err) {
             console.error(err);
-            res.status(500).json({ error: "Database error", details: err.message });
+            res.status(500).json({ error: "Database error" });
         }
     };
 };
@@ -111,6 +117,6 @@ exports.verifyStudentOwnsDataOrStaff = async (req, res, next) => {
         next();
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };

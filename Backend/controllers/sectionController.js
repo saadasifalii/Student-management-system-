@@ -7,7 +7,7 @@ exports.getAllSections = async (req, res) => {
         res.json(rows);
     } catch (err) {
         console.error("Section get all error:", err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -24,7 +24,7 @@ exports.getSectionById = async (req, res) => {
         res.json(rows[0]);
     } catch (err) {
         console.error("Section get by ID error:", err);
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error" });
     }
 };
 
@@ -53,7 +53,7 @@ exports.createSection = async (req, res) => {
         if (err.code === "ER_NO_REFERENCED_ROW_2") {
             return res.status(400).json({ error: "Invalid degree_program_id or semester_id" });
         }
-        res.status(500).json({ error: "Database error", details: err.message });
+        res.status(500).json({ error: "Database error"});
     }
 };
 // PUT /api/sections/:id
@@ -107,8 +107,8 @@ exports.updateSection = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({
-            error: "Database error",
-            details: err.message
+            error: "Database error"
+          
         });
     }
 };

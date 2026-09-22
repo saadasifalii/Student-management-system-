@@ -5,13 +5,79 @@ const SALT_ROUNDS = 10;
 
 // GET /api/users
 // Never return password_hash to the client
+// GET /api/users
+// Optional:
+// /api/users?role=student
+// /api/users?role=teacher
+// /api/users?role=student&available=true
+// /api/users?role=teacher&available=true
+
 exports.getAllUsers = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT id, name, email, role, status, created_at, updated_at FROM users");
+        const { role, available } = req.query;
+
+        let query = `
+            SELECT 
+                u.id,
+                u.name,
+                u.email,
+                u.role,
+                u.status,
+                u.created_at,
+                u.updated_at
+            FROM users u
+        `;
+
+        const params = [];
+        const conditions = [];
+
+        // Filter by role
+        if (role) {
+            if (!["admin", "student", "teacher"].includes(role)) {
+                return res.status(400).json({
+                    error: "Invalid role"
+                });
+            }
+
+            conditions.push("u.role = ?");
+            params.push(role);
+        }
+
+        // Only users who are not already linked
+        if (available === "true" && role === "student") {
+            query += `
+                LEFT JOIN students s
+                    ON s.user_id = u.id
+            `;
+
+            conditions.push("s.id IS NULL");
+        }
+
+        if (available === "true" && role === "teacher") {
+            query += `
+                LEFT JOIN teachers t
+                    ON t.user_id = u.id
+            `;
+
+            conditions.push("t.id IS NULL");
+        }
+
+        if (conditions.length > 0) {
+            query += ` WHERE ${conditions.join(" AND ")}`;
+        }
+
+        query += ` ORDER BY u.id DESC`;
+
+        const [rows] = await db.query(query, params);
+
         res.json(rows);
+
     } catch (err) {
         console.error("User get all error:", err);
-        res.status(500).json({ error: "Database error" });
+
+        res.status(500).json({
+            error: "Database error"
+        });
     }
 };
 

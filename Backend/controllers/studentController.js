@@ -1,28 +1,89 @@
 const db = require("../db");
 
 // GET /api/students
+// GET /api/students
 exports.getAllStudents = async (req, res) => {
     try {
-        // Pagination parameters
+        // Students must use their own-data endpoints instead
+        if (req.user.role === "student") {
+            return res.status(403).json({
+                error: "Students cannot access all students"
+            });
+        }
+
+        // Pagination
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
 
-        // Prevent invalid values
         const safePage = page < 1 ? 1 : page;
         const safeLimit = limit < 1 ? 10 : Math.min(limit, 100);
 
         const offset = (safePage - 1) * safeLimit;
 
-        // Get students for current page
-        const [rows] = await db.query(
-            "SELECT * FROM students ORDER BY id DESC LIMIT ? OFFSET ?",
-            [safeLimit, offset]
-        );
+        let rows;
+        let countResult;
 
-        // Get total number of students
-        const [countResult] = await db.query(
-            "SELECT COUNT(*) AS total FROM students"
-        );
+        // ADMIN → all students
+        if (req.user.role === "admin") {
+
+            [rows] = await db.query(
+                `SELECT * FROM students
+                 ORDER BY id DESC
+                 LIMIT ? OFFSET ?`,
+                [safeLimit, offset]
+            );
+
+            [countResult] = await db.query(
+                "SELECT COUNT(*) AS total FROM students"
+            );
+        }
+
+        // TEACHER → only students enrolled in teacher's offerings
+        else if (req.user.role === "teacher") {
+
+            const [teacherRows] = await db.query(
+                "SELECT id FROM teachers WHERE user_id = ?",
+                [req.user.id]
+            );
+
+            if (teacherRows.length === 0) {
+                return res.status(403).json({
+                    error: "No teacher record linked to this account"
+                });
+            }
+
+            const teacherId = teacherRows[0].id;
+
+            [rows] = await db.query(
+                `SELECT DISTINCT s.*
+                 FROM students s
+                 INNER JOIN enrollments e
+                     ON e.student_id = s.id
+                 INNER JOIN course_offerings co
+                     ON co.id = e.course_offering_id
+                 WHERE co.teacher_id = ?
+                 ORDER BY s.id DESC
+                 LIMIT ? OFFSET ?`,
+                [teacherId, safeLimit, offset]
+            );
+
+            [countResult] = await db.query(
+                `SELECT COUNT(DISTINCT s.id) AS total
+                 FROM students s
+                 INNER JOIN enrollments e
+                     ON e.student_id = s.id
+                 INNER JOIN course_offerings co
+                     ON co.id = e.course_offering_id
+                 WHERE co.teacher_id = ?`,
+                [teacherId]
+            );
+        }
+
+        else {
+            return res.status(403).json({
+                error: "You do not have permission to view students"
+            });
+        }
 
         const totalStudents = countResult[0].total;
         const totalPages = Math.ceil(totalStudents / safeLimit);
@@ -39,7 +100,33 @@ exports.getAllStudents = async (req, res) => {
 
     } catch (err) {
         console.error("Student get all error:", err);
-        res.status(500).json({ error: "Database error" });
+
+        res.status(500).json({
+            error: "Database error"
+        });
+    }
+};
+// GET /api/students/me
+exports.getMyStudentProfile = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT * FROM students WHERE user_id = ?",
+            [req.user.id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                error: "Student profile not found"
+            });
+        }
+
+        res.json(rows[0]);
+
+    } catch (err) {
+        console.error("Get my student profile error:", err);
+        res.status(500).json({
+            error: "Database error"
+        });
     }
 };
 
