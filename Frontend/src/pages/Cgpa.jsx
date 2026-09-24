@@ -31,6 +31,8 @@ function Cgpa() {
      
     const [students, setStudents] = useState([]);
 
+
+    
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
