@@ -23,10 +23,12 @@ const getArray = (response, key) => {
 function Cgpa() {
     const { user } = useAuth();
 
+    // eslint-disable-next-line no-unused-vars
     const isAdmin = user?.role === 'admin';
+    const canManageCgpa = ['admin', 'teacher'].includes(user?.role);
 
     const [cgpaList, setCgpaList] = useState([]);
-    // eslint-disable-next-line no-unused-vars
+     
     const [students, setStudents] = useState([]);
 
     const [loading, setLoading] = useState(true);
@@ -49,63 +51,62 @@ function Cgpa() {
     const pageLimit = 10;
 
     // Fetch CGPA records and students
-const fetchData = async (page = 1) => {
-    setLoading(true);
-    setError('');
+    const fetchData = async (page = 1) => {
+        setLoading(true);
+        setError('');
 
-    try {
-        const cgpaRes = await api.get(`/cgpa?page=${page}&limit=${pageLimit}`);
+        try {
+            const [cgpaRes, studentsRes] = await Promise.all([
+                api.get(`/cgpa?page=${page}&limit=${pageLimit}`),
+                api.get('/students?limit=1000')
+            ]);
 
-        console.log('CGPA RESPONSE:', cgpaRes.data);
+            const cgpaData = Array.isArray(cgpaRes.data)
+                ? cgpaRes.data
+                : getArray(cgpaRes, 'cgpa');
 
-        const cgpaData = Array.isArray(cgpaRes.data)
-            ? cgpaRes.data
-            : getArray(cgpaRes, 'cgpa');
+            const studentsData = getArray(studentsRes, 'students');
 
-        setCgpaList(cgpaData);
-        if (cgpaRes.data.pagination) {
-            setCurrentPage(cgpaRes.data.pagination.currentPage);
-            setTotalPages(cgpaRes.data.pagination.totalPages);
-            setTotalCount(cgpaRes.data.pagination.totalCgpa);
+            setCgpaList(cgpaData);
+            setStudents(studentsData);
+
+            if (cgpaRes.data.pagination) {
+                setCurrentPage(cgpaRes.data.pagination.currentPage);
+                setTotalPages(cgpaRes.data.pagination.totalPages);
+                setTotalCount(cgpaRes.data.pagination.totalCgpa);
+            }
+        } catch (err) {
+            console.error(
+                'ERROR LOADING CGPA RECORDS:',
+                err
+            );
+
+            console.error(
+                'STATUS:',
+                err.response?.status
+            );
+
+            console.error(
+                'SERVER RESPONSE:',
+                err.response?.data
+            );
+
+            setError(
+                err.response?.data?.error ||
+                err.response?.data?.message ||
+                'Failed to load CGPA records.'
+            );
+        } finally {
+            setLoading(false);
         }
+    };
 
-        console.log('FINAL CGPA DATA:', cgpaData);
-
-    } catch (err) {
-        console.error(
-            'ERROR LOADING CGPA RECORDS:',
-            err
-        );
-
-        console.error(
-            'STATUS:',
-            err.response?.status
-        );
-
-        console.error(
-            'SERVER RESPONSE:',
-            err.response?.data
-        );
-
-        setError(
-            err.response?.data?.error ||
-            err.response?.data?.message ||
-            'Failed to load CGPA records.'
-        );
-
-    } finally {
-        setLoading(false);
-
-        console.log('CGPA loading finished');
-    }
-};
-useEffect(() => {
-    if (user) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        fetchData();
-    }
-
-}, [user]);
+    useEffect(() => {
+        if (user) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            fetchData();
+        }
+    }, [user]);
 
     const goToPage = (page) => {
         if (page < 1 || page > totalPages) return;
@@ -219,7 +220,7 @@ useEffect(() => {
                     CGPA Records
                 </h2>
 
-                {isAdmin && (
+                {canManageCgpa && (
                     <button
                         className="btn btn-primary"
                         onClick={() => {
@@ -276,7 +277,7 @@ useEffect(() => {
                                         CGPA
                                     </th>
 
-                                    {isAdmin && (
+                                    {canManageCgpa && (
                                         <th>
                                             Actions
                                         </th>
@@ -315,7 +316,7 @@ useEffect(() => {
                                                 </strong>
                                             </td>
 
-                                            {isAdmin && (
+                                            {canManageCgpa && (
                                                 <td>
 
                                                     <button
